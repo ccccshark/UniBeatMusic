@@ -10,7 +10,7 @@ interface LyricViewProps {
   className?: string;
 }
 
-// 逐句高亮歌词
+// 椒盐风格歌词视图：高对比度层级，无霓虹光晕
 export default function LyricView({ lyrics, currentTime, onSeek, className }: LyricViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -49,7 +49,7 @@ export default function LyricView({ lyrics, currentTime, onSeek, className }: Ly
         className
       )}
     >
-      <div className="space-y-5 min-h-full flex flex-col justify-center">
+      <div className="space-y-4 min-h-full flex flex-col justify-center">
         {lyrics.map((line, idx) => {
           const active = idx === activeIdx;
           const distance = Math.abs(idx - activeIdx);
@@ -63,12 +63,9 @@ export default function LyricView({ lyrics, currentTime, onSeek, className }: Ly
                 active
                   ? 'text-white text-xl scale-105'
                   : distance === 1
-                  ? 'text-white/50 text-base'
+                  ? 'text-white/55 text-base'
                   : 'text-white/25 text-sm'
               )}
-              style={{
-                textShadow: active ? '0 0 16px rgba(0,240,255,0.6)' : 'none',
-              }}
               animate={{
                 opacity: active ? 1 : Math.max(0.2, 1 - distance * 0.25),
               }}

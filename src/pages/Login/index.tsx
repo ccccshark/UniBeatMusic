@@ -1,20 +1,17 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowRight,
-  Sparkles,
-  Headphones,
   Search,
-  Music,
   Settings,
-  Globe,
   Check,
   Loader2,
   ChevronRight,
+  Music,
+  Code2,
+  Server,
 } from 'lucide-react';
-import ParticleBackground from '@/components/ParticleBackground';
-import { PLATFORM_LIST } from '@/data/platforms';
 import { useUserStore } from '@/store/userStore';
 import { useMusicSourceStore } from '@/store/musicSourceStore';
 import { searchApi, hasActiveSource } from '@/services/musicApi';
@@ -27,7 +24,7 @@ export default function Login() {
   const navigate = useNavigate();
   const { loginAsGuest } = useUserStore();
   const { playTrack } = usePlayerStore();
-  const { sources, activeSourceId, getActiveSource } = useMusicSourceStore();
+  const { sources, getActiveSource } = useMusicSourceStore();
   const [mode, setMode] = useState<LoginMode>('menu');
 
   const [searchKeyword, setSearchKeyword] = useState('');
@@ -71,127 +68,107 @@ export default function Login() {
   };
 
   return (
-    <div className="relative min-h-screen bg-space-900 overflow-hidden flex flex-col">
-      <ParticleBackground className="absolute inset-0 w-full h-full" density={70} />
-
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full bg-neon-purple/20 blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-0 right-0 w-[400px] h-[400px] rounded-full bg-neon-pink/15 blur-[100px] pointer-events-none" />
+    <div className="relative min-h-screen bg-salt-bg overflow-hidden flex flex-col">
+      {/* 流光背景 */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[500px] rounded-full bg-salt-primary/20 blur-[120px]" />
+        <div className="absolute bottom-0 right-0 w-[400px] h-[400px] rounded-full bg-salt-accent/15 blur-[100px]" />
+        <div className="absolute top-1/3 left-0 w-[300px] h-[300px] rounded-full bg-neon-purple/15 blur-[100px]" />
+      </div>
 
       {/* 顶部 Logo */}
-      <div className="relative z-10 pt-16 pb-6 px-6 text-center">
+      <div className="relative z-10 pt-20 pb-6 px-6 text-center">
         <motion.div
-          initial={{ scale: 0, rotate: -180, opacity: 0 }}
-          animate={{ scale: 1, rotate: 0, opacity: 1 }}
-          transition={{ type: 'spring', stiffness: 200, damping: 15, delay: 0.2 }}
-          className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-neon shadow-neon-purple mb-5 relative"
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: 'spring', stiffness: 200, damping: 18, delay: 0.1 }}
+          className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-gradient-flow shadow-xl mb-5 relative"
         >
-          <Headphones className="w-10 h-10 text-white" />
-          <motion.div
-            className="absolute inset-0 rounded-2xl border-2 border-neon-cyan"
-            animate={{ opacity: [0.3, 1, 0.3], scale: [1, 1.1, 1] }}
-            transition={{ duration: 2, repeat: Infinity }}
-          />
+          <Music className="w-9 h-9 text-white" />
         </motion.div>
 
         <motion.h1
-          initial={{ y: 20, opacity: 0 }}
+          initial={{ y: 16, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.4 }}
-          className="font-display text-5xl font-black tracking-widest gradient-text"
+          transition={{ delay: 0.25 }}
+          className="text-4xl font-black tracking-wide text-white"
         >
           UniBeat
         </motion.h1>
         <motion.p
-          initial={{ y: 20, opacity: 0 }}
+          initial={{ y: 16, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.5 }}
-          className="text-white/60 text-sm mt-2 tracking-wider"
+          transition={{ delay: 0.32 }}
+          className="text-white/55 text-xs mt-2 tracking-wider"
         >
-          多音源聚合 · 沉浸式音乐宇宙
+          音源聚合 · 自由播放
         </motion.p>
-
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.6 }}
-          className="flex items-center justify-center gap-2 mt-4"
-        >
-          {PLATFORM_LIST.map((p) => (
-            <div
-              key={p.code}
-              className="flex items-center gap-1 px-2.5 py-1 rounded-full glass text-[10px]"
-              style={{ boxShadow: `0 0 8px ${p.color}33` }}
-            >
-              <span className="w-1.5 h-1.5 rounded-full" style={{ background: p.color }} />
-              <span className="text-white/70">{p.shortName}</span>
-            </div>
-          ))}
-        </motion.div>
       </div>
 
       {/* 主内容区 */}
-      <div className="relative z-10 flex-1 px-6 pb-10">
+      <div className="relative z-10 flex-1 px-5 pb-10">
         <motion.div
-          initial={{ y: 40, opacity: 0 }}
+          initial={{ y: 24, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.7, type: 'spring', stiffness: 100 }}
-          className="max-w-md mx-auto glass-strong rounded-3xl p-6 border border-white/10 shadow-2xl"
+          transition={{ delay: 0.4, type: 'spring', stiffness: 100 }}
+          className="max-w-md mx-auto"
         >
           <AnimatePresence mode="wait">
             {/* 主菜单 */}
             {mode === 'menu' && (
               <motion.div
                 key="menu"
-                initial={{ opacity: 0, x: -20 }}
+                initial={{ opacity: 0, x: -16 }}
                 animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
+                exit={{ opacity: 0, x: -16 }}
                 className="space-y-3"
               >
                 {/* 音源状态卡片 */}
                 <div
                   className={
                     hasSource
-                      ? 'p-4 rounded-2xl bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/30'
-                      : 'p-4 rounded-2xl bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/30'
+                      ? 'p-4 rounded-3xl bg-gradient-to-r from-salt-primary/[0.10] to-salt-primary/[0.04] border border-salt-primary/25'
+                      : 'p-4 rounded-3xl bg-gradient-to-r from-salt-accent/[0.10] to-salt-accent/[0.04] border border-salt-accent/25'
                   }
                 >
                   <div className="flex items-center gap-3">
                     <div
                       className={
                         hasSource
-                          ? 'w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center'
-                          : 'w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center'
+                          ? 'w-11 h-11 rounded-2xl bg-gradient-primary flex items-center justify-center shadow-md'
+                          : 'w-11 h-11 rounded-2xl bg-gradient-accent flex items-center justify-center shadow-md'
                       }
                     >
                       {hasSource ? (
-                        <Check className="w-6 h-6 text-white" />
+                        activeSource?.mode === 'script' ? (
+                          <Code2 className="w-5 h-5 text-white" />
+                        ) : (
+                          <Server className="w-5 h-5 text-white" />
+                        )
                       ) : (
-                        <Globe className="w-6 h-6 text-white" />
+                        <Settings className="w-5 h-5 text-white" />
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-white">
+                      <p className="text-sm font-semibold text-white">
                         {hasSource ? '音源已配置' : '请先配置音源'}
                       </p>
-                      <p className="text-[10px] text-white/60 mt-0.5 truncate">
+                      <p className="text-[11px] text-white/55 mt-0.5 truncate">
                         {hasSource
-                          ? `当前音源：${activeSource?.name}`
+                          ? `${activeSource?.name} · ${activeSource?.mode === 'script' ? '脚本模式' : 'API 模式'}`
                           : '添加音源后才能搜索和播放音乐'}
                       </p>
                     </div>
-                    <button
-                      onClick={() => navigate('/music-source')}
-                      className="w-8 h-8 rounded-full glass flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 transition-colors"
-                    >
-                      <Settings className="w-4 h-4" />
-                    </button>
+                    {hasSource && (
+                      <Check className="w-5 h-5 text-salt-primary" />
+                    )}
                   </div>
                 </div>
 
-                {/* 搜索试听 - 主推 */}
+                {/* 搜索试听 */}
                 <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.99 }}
                   onClick={() => {
                     if (!hasSource) {
                       navigate('/music-source');
@@ -199,46 +176,51 @@ export default function Login() {
                       setMode('search');
                     }
                   }}
-                  className="w-full flex items-center gap-3 p-4 rounded-2xl bg-gradient-to-r from-neon-cyan/20 to-blue-500/20 border border-neon-cyan/40 hover:border-neon-cyan/60 transition-colors"
-                  style={{ boxShadow: '0 0 20px rgba(0,240,255,0.2)' }}
+                  className="w-full flex items-center gap-3 p-4 rounded-3xl bg-gradient-to-r from-salt-primary/15 to-salt-primary/5 border border-salt-primary/30 hover:border-salt-primary/50 transition-colors"
                 >
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-neon-cyan to-blue-600 flex items-center justify-center shrink-0">
-                    <Search className="w-6 h-6 text-white" />
+                  <div className="w-11 h-11 rounded-2xl bg-gradient-primary flex items-center justify-center shrink-0 shadow-md">
+                    <Search className="w-5 h-5 text-white" />
                   </div>
                   <div className="flex-1 text-left">
-                    <p className="text-sm font-bold text-white flex items-center gap-1.5">
+                    <p className="text-sm font-semibold text-white">
                       搜索音乐
-                      <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-neon-cyan/30 text-neon-cyan">
-                        推荐
-                      </span>
                     </p>
-                    <p className="text-[10px] text-white/60 mt-0.5">
+                    <p className="text-[11px] text-white/55 mt-0.5">
                       {hasSource
-                        ? '从配置的音源搜索播放音乐'
+                        ? '从音源搜索并播放'
                         : '配置音源后即可搜索播放'}
                     </p>
                   </div>
-                  <ArrowRight className="w-4 h-4 text-white/60" />
+                  <ArrowRight className="w-4 h-4 text-white/55" />
                 </motion.button>
 
                 {/* 音源管理 */}
                 <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.99 }}
                   onClick={() => navigate('/music-source')}
-                  className="w-full flex items-center gap-3 p-4 rounded-2xl glass border border-white/10 hover:border-white/20 transition-colors"
+                  className="w-full flex items-center gap-3 p-4 rounded-3xl glass border border-white/[0.08] hover:border-white/[0.16] transition-colors"
                 >
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center shrink-0">
-                    <Settings className="w-6 h-6 text-white" />
+                  <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center shrink-0 shadow-md">
+                    <Settings className="w-5 h-5 text-white" />
                   </div>
                   <div className="flex-1 text-left">
                     <p className="text-sm font-semibold text-white">音源管理</p>
-                    <p className="text-[10px] text-white/60 mt-0.5">
-                      添加、删除、切换音源 {sources.length > 0 && `(已配置 ${sources.length} 个)`}
+                    <p className="text-[11px] text-white/55 mt-0.5">
+                      添加、删除、切换音源
+                      {sources.length > 0 && ` · 已配置 ${sources.length} 个`}
                     </p>
                   </div>
                   <ChevronRight className="w-4 h-4 text-white/40" />
                 </motion.button>
+
+                {/* 直接进入 */}
+                <button
+                  onClick={handleGuest}
+                  className="w-full py-3 text-center text-xs text-white/40 hover:text-white/70 transition-colors"
+                >
+                  稍后配置，先以游客身份进入 →
+                </button>
               </motion.div>
             )}
 
@@ -246,17 +228,14 @@ export default function Login() {
             {mode === 'search' && (
               <motion.div
                 key="search"
-                initial={{ opacity: 0, x: 20 }}
+                initial={{ opacity: 0, x: 16 }}
                 animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
+                exit={{ opacity: 0, x: -16 }}
+                className="glass-strong rounded-3xl p-5 border border-white/[0.08] shadow-xl"
               >
                 <div className="text-center mb-4">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full glass border border-neon-cyan/30 mb-2">
-                    <Search className="w-3 h-3 text-neon-cyan" />
-                    <span className="text-[10px] text-neon-cyan font-medium">在线搜索</span>
-                  </div>
                   <p className="text-sm font-semibold text-white">搜索音乐</p>
-                  <p className="text-[10px] text-white/50 mt-1">
+                  <p className="text-[11px] text-white/45 mt-1">
                     当前音源：{activeSource?.name || '未配置'}
                   </p>
                 </div>
@@ -267,12 +246,13 @@ export default function Login() {
                     value={searchKeyword}
                     onChange={(e) => setSearchKeyword(e.target.value)}
                     placeholder="搜索歌曲、歌手..."
-                    className="flex-1 px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 focus:border-neon-cyan outline-none text-sm text-white placeholder:text-white/30"
+                    autoFocus
+                    className="flex-1 px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/[0.08] focus:border-salt-primary outline-none text-sm text-white placeholder-white/30"
                   />
                   <button
                     type="submit"
                     disabled={searching}
-                    className="px-4 py-2.5 rounded-xl bg-gradient-neon text-white text-xs font-medium shadow-neon-purple disabled:opacity-60 flex items-center gap-1"
+                    className="px-4 py-2.5 rounded-xl bg-gradient-primary text-white text-xs font-medium shadow-md disabled:opacity-60 flex items-center gap-1"
                   >
                     {searching ? (
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -286,25 +266,25 @@ export default function Login() {
                   {searchResults.map((track, idx) => (
                     <motion.button
                       key={track.id}
-                      initial={{ opacity: 0, y: 5 }}
+                      initial={{ opacity: 0, y: 4 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: idx * 0.03 }}
                       onClick={() => handlePlayTrack(track)}
-                      className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-white/5 transition-colors text-left group"
+                      className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-white/5 transition-colors text-left"
                     >
                       <div className="relative shrink-0">
                         {track.coverUrl ? (
                           <img
                             src={track.coverUrl}
                             alt={track.title}
-                            className="w-10 h-10 rounded-md object-cover"
+                            className="w-11 h-11 rounded-lg object-cover"
                             onError={(e) => {
                               (e.target as HTMLImageElement).style.display = 'none';
                             }}
                           />
                         ) : (
                           <div
-                            className="w-10 h-10 rounded-md flex items-center justify-center"
+                            className="w-11 h-11 rounded-lg flex items-center justify-center"
                             style={{
                               background: `linear-gradient(135deg, ${track.coverColors.from}, ${track.coverColors.to})`,
                             }}
@@ -318,63 +298,28 @@ export default function Login() {
                           {track.title}
                         </p>
                         <p className="text-[10px] text-white/50 truncate">
-                          {track.artist}
+                          {track.artist} · {track.album}
                         </p>
                       </div>
-                      <ArrowRight className="w-3.5 h-3.5 text-white/30 group-hover:text-neon-cyan transition-colors" />
                     </motion.button>
                   ))}
-
-                  {searchResults.length === 0 && !searching && (
-                    <div className="text-center py-8 text-white/40">
-                      <Search className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                      <p className="text-[11px]">输入关键词开始搜索</p>
-                    </div>
-                  )}
-
-                  {searching && (
-                    <div className="text-center py-8">
-                      <Loader2 className="w-6 h-6 animate-spin text-neon-cyan mx-auto" />
-                      <p className="text-[11px] text-white/50 mt-2">搜索中...</p>
+                  {!searching && searchResults.length === 0 && searchKeyword && (
+                    <div className="py-8 text-center">
+                      <p className="text-xs text-white/40">暂无搜索结果</p>
                     </div>
                   )}
                 </div>
 
                 <button
                   onClick={() => setMode('menu')}
-                  className="w-full mt-4 py-2.5 rounded-xl border border-white/10 text-white/60 hover:text-white hover:border-white/20 text-xs transition-colors"
+                  className="w-full mt-3 py-2 text-center text-[11px] text-white/45 hover:text-white/75 transition-colors"
                 >
-                  返回菜单
+                  ← 返回菜单
                 </button>
               </motion.div>
             )}
           </AnimatePresence>
-
-          {/* 游客入口 */}
-          {mode === 'menu' && (
-            <>
-              <div className="flex items-center gap-3 my-5">
-                <div className="flex-1 h-px bg-white/10" />
-                <span className="text-[10px] text-white/40">或</span>
-                <div className="flex-1 h-px bg-white/10" />
-              </div>
-
-              <button
-                onClick={handleGuest}
-                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-white/10 text-white/70 hover:text-white hover:border-white/20 text-xs transition-colors"
-              >
-                <Sparkles className="w-3.5 h-3.5" />
-                游客快速体验
-              </button>
-            </>
-          )}
         </motion.div>
-
-        <p className="text-center text-[10px] text-white/30 mt-6 max-w-md mx-auto leading-relaxed">
-          本应用仅为音乐播放器，不提供音乐内容
-          <br />
-          所有音乐数据来自用户自行配置的音源服务
-        </p>
       </div>
     </div>
   );

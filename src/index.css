@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -22,59 +22,73 @@ body,
   height: 100%;
   margin: 0;
   padding: 0;
-  background-color: #0A0E1A;
-  color: #E5E7EB;
+  background-color: #0F1115;
+  color: #FFFFFF;
   overflow-x: hidden;
 }
 
-/* 全局滚动条 */
+/* 全局滚动条 - 椒盐风格细线条 */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 4px;
+  height: 4px;
 }
 ::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.02);
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #00F0FF 0%, #7B2FF7 100%);
-  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 2px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #00F0FF 0%, #FF2E9F 100%);
+  background: rgba(255, 255, 255, 0.22);
 }
 
 @layer components {
-  /* 玻璃拟态卡片 */
+  /* 玻璃拟态卡片（椒盐风格：更克制） */
   .glass {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(20px) saturate(140%);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    border: 1px solid rgba(255, 255, 255, 0.06);
   }
   .glass-strong {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.04) 100%);
-    backdrop-filter: blur(28px) saturate(200%);
-    -webkit-backdrop-filter: blur(28px) saturate(200%);
-    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(26, 29, 36, 0.78);
+    backdrop-filter: blur(28px) saturate(160%);
+    -webkit-backdrop-filter: blur(28px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
   }
-  /* 霓虹文字 */
+  /* 卡片表面 */
+  .surface {
+    background: #1A1D24;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+  }
+  .surface-hi {
+    background: #23272F;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  /* 主色文字 */
+  .text-primary {
+    color: #3D7AFF;
+  }
+  .text-accent {
+    color: #FF6B35;
+  }
+  /* 旧 neon 文字类保留兼容 */
   .neon-text-cyan {
-    color: #00F0FF;
-    text-shadow: 0 0 8px rgba(0, 240, 255, 0.6), 0 0 16px rgba(0, 240, 255, 0.3);
+    color: #3D7AFF;
   }
   .neon-text-pink {
-    color: #FF2E9F;
-    text-shadow: 0 0 8px rgba(255, 46, 159, 0.6), 0 0 16px rgba(255, 46, 159, 0.3);
+    color: #FF6B35;
   }
   .neon-border-cyan {
-    box-shadow: 0 0 0 1px rgba(0, 240, 255, 0.5), 0 0 20px rgba(0, 240, 255, 0.3), inset 0 0 12px rgba(0, 240, 255, 0.1);
+    box-shadow: 0 0 0 1px rgba(61, 122, 255, 0.4), 0 0 16px rgba(61, 122, 255, 0.15);
   }
   .neon-border-pink {
-    box-shadow: 0 0 0 1px rgba(255, 46, 159, 0.5), 0 0 20px rgba(255, 46, 159, 0.3), inset 0 0 12px rgba(255, 46, 159, 0.1);
+    box-shadow: 0 0 0 1px rgba(255, 107, 53, 0.4), 0 0 16px rgba(255, 107, 53, 0.15);
   }
-  /* 渐变文字 */
+  /* 流光渐变文字 */
   .gradient-text {
-    background: linear-gradient(135deg, #00F0FF 0%, #7B2FF7 50%, #FF2E9F 100%);
+    background: linear-gradient(135deg, #3D7AFF 0%, #7B2FF7 50%, #FF6B35 100%);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -88,16 +102,23 @@ body,
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
-  /* 网格背景 */
+  /* 网格背景（椒盐风格：更细微） */
   .grid-bg {
     background-image:
-      linear-gradient(rgba(0, 240, 255, 0.06) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(0, 240, 255, 0.06) 1px, transparent 1px);
-    background-size: 40px 40px;
+      linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+    background-size: 32px 32px;
   }
   /* 扫描线 */
   .scan-line {
-    background: linear-gradient(180deg, transparent 0%, rgba(0, 240, 255, 0.4) 50%, transparent 100%);
+    background: linear-gradient(180deg, transparent 0%, rgba(61, 122, 255, 0.3) 50%, transparent 100%);
+  }
+  /* 流光效果（基于封面色，由 inline style 设置 --cover-color） */
+  .flow-bg {
+    background:
+      radial-gradient(ellipse 80% 60% at 30% 0%, var(--cover-color, #3D7AFF) 0%, transparent 60%),
+      radial-gradient(ellipse 80% 60% at 70% 100%, var(--cover-color-2, #7B2FF7) 0%, transparent 60%);
+    opacity: 0.35;
   }
 }
 
@@ -113,7 +134,7 @@ body,
 
 /* 选择高亮 */
 ::selection {
-  background: rgba(0, 240, 255, 0.3);
+  background: rgba(61, 122, 255, 0.35);
   color: #fff;
 }
 
@@ -124,11 +145,11 @@ body,
     height: 100dvh;
     overscroll-behavior-y: none;
   }
-  
+
   .snap-container {
     scroll-snap-type: y proximity;
   }
-  
+
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
@@ -140,4 +161,41 @@ body,
     height: 100vh;
     height: 100dvh;
   }
+}
+
+/* 椒盐风格输入框 */
+input, textarea {
+  font-family: inherit;
+}
+
+/* 按钮点击反馈 */
+button {
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+/* 范围滑块美化 */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+input[type="range"]::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
 }

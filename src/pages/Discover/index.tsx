@@ -40,7 +40,6 @@ export default function Discover() {
         setLoading(false);
       }
     );
-    // 异步加载在线推荐歌曲（不阻塞页面）
     recommendApi.getRecommendTracks().then((tracks) => {
       if (!cancelled && tracks.length > 0) {
         setOnlineTracks(tracks.slice(0, 12));
@@ -64,35 +63,35 @@ export default function Discover() {
         right={
           <button
             onClick={() => navigate('/login')}
-            className="w-9 h-9 rounded-lg glass flex items-center justify-center text-white/70 hover:text-neon-cyan"
+            className="w-9 h-9 rounded-lg glass flex items-center justify-center text-white/70 hover:text-salt-primary transition-colors"
           >
             <Search className="w-4 h-4" />
           </button>
         }
       />
 
-      {/* 个性化推荐 Banner */}
+      {/* 个性化推荐 Banner - 椒盐风格 */}
       <div className="px-4 pt-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="relative glass-strong rounded-2xl p-4 overflow-hidden"
+          className="relative glass-strong rounded-3xl p-4 overflow-hidden"
         >
-          <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-neon-purple/30 blur-3xl" />
-          <div className="absolute -bottom-10 -left-10 w-32 h-32 rounded-full bg-neon-cyan/20 blur-3xl" />
+          <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-salt-primary/25 blur-3xl" />
+          <div className="absolute -bottom-10 -left-10 w-32 h-32 rounded-full bg-salt-accent/20 blur-3xl" />
           <div className="relative flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-gradient-neon flex items-center justify-center shadow-neon-purple shrink-0">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-flow flex items-center justify-center shadow-md shrink-0">
               <Sparkles className="w-6 h-6 text-white" />
             </div>
             <div className="flex-1">
               <p className="text-sm font-bold text-white">为你推荐</p>
-              <p className="text-[10px] text-white/60 mt-0.5">
+              <p className="text-[10px] text-white/55 mt-0.5">
                 基于网易云热门榜单智能推荐
               </p>
             </div>
             <button
               onClick={() => navigate('/')}
-              className="px-3 py-1.5 rounded-lg bg-gradient-neon text-white text-xs font-medium shadow-neon-purple"
+              className="px-3 py-1.5 rounded-xl bg-gradient-flow text-white text-xs font-medium shadow-md"
             >
               查看
             </button>
@@ -108,7 +107,7 @@ export default function Discover() {
               <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
               在线热歌
             </h3>
-            <span className="text-[10px] text-white/50">实时更新</span>
+            <span className="text-[10px] text-white/45">实时更新</span>
           </div>
           <div className="grid grid-cols-3 gap-2">
             {onlineTracks.slice(0, 9).map((track, idx) => (
@@ -121,7 +120,7 @@ export default function Discover() {
                   playTrack(track, onlineTracks);
                   navigate(`/player/${track.id}`);
                 }}
-                className="glass rounded-xl p-2 text-left hover:bg-white/8 transition-colors group"
+                className="surface rounded-2xl p-2 text-left hover:bg-white/8 transition-colors group"
               >
                 <div className="relative mb-1.5">
                   <CoverArt
@@ -131,7 +130,7 @@ export default function Discover() {
                     size="full"
                     className="aspect-square"
                   />
-                  <div className="absolute inset-0 rounded-md bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                  <div className="absolute inset-0 rounded-xl bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
                     <Play className="w-3.5 h-3.5 text-white" fill="white" />
                   </div>
                 </div>
@@ -153,7 +152,7 @@ export default function Discover() {
               className={cn(
                 'px-3.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all',
                 activeGenre === g
-                  ? 'bg-gradient-neon text-white shadow-neon-purple'
+                  ? 'bg-gradient-flow text-white shadow-md'
                   : 'glass text-white/60 hover:text-white'
               )}
             >
@@ -167,13 +166,13 @@ export default function Discover() {
       <section className="px-4 pt-5 pb-4">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-bold text-white">精选歌单广场</h3>
-          <span className="text-[10px] text-white/50">{filteredPlaylists.length} 个歌单</span>
+          <span className="text-[10px] text-white/45">{filteredPlaylists.length} 个歌单</span>
         </div>
 
         {loading ? (
           <div className="grid grid-cols-2 gap-3">
             {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="glass rounded-2xl p-3 animate-pulse">
+              <div key={i} className="surface rounded-2xl p-3 animate-pulse">
                 <div className="aspect-square rounded-xl bg-white/5 mb-2" />
                 <div className="h-3 bg-white/5 rounded mb-1.5" />
                 <div className="h-2 bg-white/5 rounded w-2/3" />
@@ -189,7 +188,7 @@ export default function Discover() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.05 }}
                 onClick={() => navigate('/')}
-                className="glass rounded-2xl p-2.5 text-left hover:bg-white/8 transition-colors group"
+                className="surface rounded-2xl p-2.5 text-left hover:bg-white/8 transition-colors group"
               >
                 <div className="relative">
                   <CoverArt
@@ -198,13 +197,11 @@ export default function Discover() {
                     size="full"
                     className="aspect-square mb-2 group-hover:scale-105 transition-transform"
                   />
-                  {/* 播放按钮浮层 */}
                   <div className="absolute inset-0 rounded-xl bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                    <div className="w-10 h-10 rounded-full bg-gradient-neon flex items-center justify-center shadow-neon-purple">
+                    <div className="w-10 h-10 rounded-full bg-gradient-flow flex items-center justify-center shadow-md">
                       <Play className="w-4 h-4 text-white ml-0.5" fill="white" />
                     </div>
                   </div>
-                  {/* 平台标识 */}
                   <div className="absolute top-1.5 right-1.5">
                     {pl.platform === 'mixed' ? (
                       <span className="text-[9px] px-1.5 py-0.5 rounded-full glass text-white/80 font-medium">
@@ -230,11 +227,10 @@ export default function Discover() {
       {/* 榜单区 */}
       <section className="px-4 pb-32">
         <h3 className="text-sm font-bold text-white mb-3 flex items-center gap-1.5">
-          <TrendingUp className="w-4 h-4 text-neon-cyan" />
+          <TrendingUp className="w-4 h-4 text-salt-primary" />
           实时榜单
         </h3>
 
-        {/* 榜单切换 */}
         <div className="flex gap-2 mb-3 overflow-x-auto no-scrollbar">
           {charts.map((chart, idx) => {
             const active = activeChart === idx;
@@ -247,7 +243,7 @@ export default function Discover() {
                 className={cn(
                   'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all',
                   active
-                    ? 'bg-gradient-neon text-white shadow-neon-purple'
+                    ? 'bg-gradient-flow text-white shadow-md'
                     : 'glass text-white/60 hover:text-white'
                 )}
               >
@@ -258,8 +254,7 @@ export default function Discover() {
           })}
         </div>
 
-        {/* 榜单内容 */}
-        <div className="glass rounded-2xl p-2 space-y-1">
+        <div className="surface rounded-2xl p-2 space-y-1">
           {charts[activeChart]?.tracks.map((track, idx) => (
             <motion.button
               key={track.id}
@@ -272,7 +267,6 @@ export default function Discover() {
               }}
               className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-white/5 transition-colors text-left group"
             >
-              {/* 排名 */}
               <div
                 className={cn(
                   'w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs shrink-0',
@@ -284,7 +278,6 @@ export default function Discover() {
                 {idx + 1}
               </div>
 
-              {/* 封面 */}
               <div className="relative shrink-0">
                 <CoverArt colors={track.coverColors} coverUrl={track.coverUrl} title={track.title} size="sm" />
                 <div className="absolute inset-0 rounded-md bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
@@ -292,15 +285,13 @@ export default function Discover() {
                 </div>
               </div>
 
-              {/* 信息 */}
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-white truncate">{track.title}</p>
                 <p className="text-[10px] text-white/50 truncate">{track.artist}</p>
               </div>
 
-              {/* 播放数 */}
               <div className="text-right shrink-0">
-                <p className="text-[10px] text-white/60">{formatPlayCount(track.playCount)}</p>
+                <p className="text-[10px] text-white/55">{formatPlayCount(track.playCount)}</p>
                 <div className="mt-0.5">
                   <PlatformBadge platform={track.platform} size="xs" />
                 </div>
@@ -311,7 +302,7 @@ export default function Discover() {
 
         {loading && (
           <div className="flex items-center justify-center py-8 text-white/50">
-            <Loader2 className="w-5 h-5 animate-spin text-neon-cyan" />
+            <Loader2 className="w-5 h-5 animate-spin text-salt-primary" />
           </div>
         )}
       </section>

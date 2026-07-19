@@ -1,175 +1,97 @@
 /**
- * 音乐 API 服务 - 音源模式
+ * 音乐 API 服务 - 双模式音源
  *
  * 设计说明：
- * - 软件本身不内置任何音乐 API 地址
- * - 所有音乐数据从用户配置的「音源」地址获取
- * - 音源为用户自行部署的音乐 API 服务（兼容 NeteaseCloudMusicApi 接口风格）
+ * - 软件本身不内置任何音乐 API
+ * - 支持两种音源模式：
+ *   1. api    —— REST API 模式（兼容 NeteaseCloudMusicApi 接口）
+ *   2. script —— LX Music 脚本模式（在线导入 JS 脚本获取播放地址）
+ * - 脚本模式下：
+ *   - 搜索/歌词：通过公共平台 API + CORS 代理
+ *   - 播放地址：通过脚本 musicUrl action 获取
  * - 软件只负责调用音源，不提供音乐内容
- *
- * 音源 API 规范（兼容 NeteaseCloudMusicApi）：
- * - GET /search?keywords=xxx&limit=30    搜索歌曲
- * - GET /song/detail?ids=1,2,3           获取歌曲详情
- * - GET /song/url?id=123                 获取歌曲播放地址
- * - GET /lyric?id=123                    获取歌词
- * - GET /playlist/detail?id=123          获取歌单详情
- * - GET /recommend/songs                 获取推荐歌曲
- * - GET /login/qr/key                    获取扫码登录key
- * - GET /login/qr/check?key=xxx          检查扫码状态
  */
 
-import type { Track, LyricLine, Platform, MusicSource } from '@/types';
+import type {
+  Track,
+  LyricLine,
+  Platform,
+  MusicSource,
+  LxPlatform,
+  LxMusicInfo,
+  MusicQuality,
+} from '@/types';
 import { useMusicSourceStore } from '@/store/musicSourceStore';
+import { getScriptRuntime } from './lxScriptRuntime';
 
-// ========== 音源请求基础 ==========
+// ========== CORS 代理 ==========
+
+const CORS_PROXIES = [
+  (url: string) => `https://corsproxy.io/?url=${encodeURIComponent(url)}`,
+  (url: string) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+];
+
+async function proxiedFetch(
+  url: string,
+  options: RequestInit = {}
+): Promise<Response> {
+  let lastErr: Error | null = null;
+  for (const proxy of CORS_PROXIES) {
+    try {
+      const res = await fetch(proxy(url), options);
+      if (res.ok) return res;
+      lastErr = new Error(`HTTP ${res.status}`);
+    } catch (err) {
+      lastErr = err as Error;
+    }
+  }
+  // 直连兜底
+  try {
+    return await fetch(url, options);
+  } catch (err) {
+    throw lastErr || err;
+  }
+}
+
+async function proxiedFetchJson<T>(
+  url: string,
+  options: RequestInit = {}
+): Promise<T> {
+  const res = await proxiedFetch(url, options);
+  return res.json() as Promise<T>;
+}
+
+// ========== 音源访问 ==========
 
 function getActiveSource(): MusicSource | null {
   return useMusicSourceStore.getState().getActiveSource();
 }
 
-function getBaseUrl(): string {
+async function apiRequest<T>(path: string, options: RequestInit = {}): Promise<T> {
   const source = getActiveSource();
-  if (!source) throw new Error('未配置音源，请先添加音源');
-  return source.baseUrl.endsWith('/')
-    ? source.baseUrl.slice(0, -1)
-    : source.baseUrl;
-}
-
-async function sourceRequest<T>(
-  path: string,
-  options: RequestInit = {}
-): Promise<T> {
-  const baseUrl = getBaseUrl();
-  const url = path.startsWith('http') ? path : `${baseUrl}${path}`;
-
-  const res = await fetch(url, {
+  if (!source || source.mode !== 'api') {
+    throw new Error('未配置 API 模式音源');
+  }
+  const base = source.url.endsWith('/') ? source.url.slice(0, -1) : source.url;
+  const url = path.startsWith('http') ? path : `${base}${path}`;
+  return proxiedFetchJson<T>(url, {
     ...options,
     headers: {
-      'User-Agent':
-        'Mozilla/5.0 (Linux; Android 10; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
       Accept: 'application/json',
+      'User-Agent': 'Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36',
       ...(options.headers || {}),
     },
-    credentials: 'include',
   });
-
-  if (!res.ok) {
-    throw new Error(`音源请求失败: ${res.status}`);
-  }
-  return res.json() as Promise<T>;
 }
 
-// ========== 类型定义 ==========
+// ========== 平台映射 ==========
 
-interface SourceSong {
-  id: number;
-  name: string;
-  artists?: { name: string }[];
-  ar?: { name: string }[];
-  album?: { name: string; picUrl?: string };
-  al?: { name: string; picUrl?: string };
-  duration?: number;
-  dt?: number;
-  fee?: number;
-  playCount?: number;
-}
-
-interface SourceSearchResult {
-  result?: {
-    songs?: SourceSong[];
-    songCount?: number;
-  };
-  code: number;
-}
-
-interface SourceSongDetailResult {
-  songs?: SourceSong[];
-  code: number;
-}
-
-interface SourceSongUrlResult {
-  data?: Array<{ id: number; url: string; br: number; size: number }>;
-  code: number;
-}
-
-interface SourceLyricResult {
-  lrc?: { lyric: string };
-  code: number;
-}
-
-interface SourcePlaylistResult {
-  result?: {
-    tracks?: SourceSong[];
-  };
-  playlist?: {
-    tracks?: SourceSong[];
-  };
-  code: number;
-}
-
-interface SourceRecommendResult {
-  data?: { dailySongs?: SourceSong[] };
-  result?: SourceSong[];
-  code: number;
-}
-
-interface SourceQrKeyResult {
-  code: number;
-  unikey?: string;
-  data?: { unikey: string };
-}
-
-interface SourceQrCheckResult {
-  code: number;
-  nickname?: string;
-  avatarUrl?: string;
-  message?: string;
-  cookie?: string;
-}
-
-// ========== 数据转换 ==========
-
-function sourceToTrack(song: SourceSong, sourceId: string): Track {
-  const artistList = song.artists || song.ar || [];
-  const artist = artistList.map((a) => a.name).join('/') || '未知艺术家';
-  const albumInfo = song.album || song.al;
-  const cover = albumInfo?.picUrl || '';
-  const duration = Math.floor(
-    ((song.duration || song.dt || 0) > 1000
-      ? song.duration || song.dt || 0
-      : (song.duration || song.dt || 0) * 1000) / 1000
-  );
-
-  const colors = generateColors(song.name + artist);
-  const platform = inferPlatform(sourceId);
-
-  return {
-    id: `src-${sourceId}-${song.id}`,
-    title: song.name,
-    artist,
-    album: albumInfo?.name || '未知专辑',
-    coverColors: colors,
-    coverUrl: cover,
-    duration,
-    platform,
-    audioUrl: '',
-    neteaseId: platform === 'netease' ? song.id : undefined,
-    lyrics: [],
-    tags: [platformLabel(platform)],
-    playCount: song.playCount || Math.floor(Math.random() * 5000000) + 100000,
-    likeCount: Math.floor(Math.random() * 200000) + 5000,
-    releaseYear: new Date().getFullYear(),
-  };
-}
-
-function inferPlatform(sourceId: string): Platform {
-  const source = useMusicSourceStore
-    .getState()
-    .sources.find((s) => s.id === sourceId);
-  if (!source) return 'netease';
-  if (source.type === 'qq') return 'qq';
-  if (source.type === 'netease') return 'netease';
-  return 'netease';
+function inferLxPlatform(platform: Platform): LxPlatform {
+  // Platform: 'qq' | 'netease' | 'qishui'
+  // LxPlatform: 'kw' | 'kg' | 'tx' | 'wy' | 'mg'
+  if (platform === 'qq') return 'tx';
+  if (platform === 'netease') return 'wy';
+  return 'wy';
 }
 
 function platformLabel(platform: Platform): string {
@@ -180,6 +102,8 @@ function platformLabel(platform: Platform): string {
   };
   return map[platform] || '音乐';
 }
+
+// ========== 数据转换 ==========
 
 function generateColors(seed: string): { from: string; to: string; accent: string } {
   const palettes = [
@@ -201,7 +125,6 @@ function parseLrc(lrc: string): LyricLine[] {
   const lines = lrc.split('\n');
   const result: LyricLine[] = [];
   const timeReg = /\[(\d{2}):(\d{2})\.(\d{2,3})\]/g;
-
   for (const line of lines) {
     const text = line.replace(timeReg, '').trim();
     if (!text) continue;
@@ -218,6 +141,87 @@ function parseLrc(lrc: string): LyricLine[] {
   return result.sort((a, b) => a.time - b.time);
 }
 
+// ========== 网易云公共 API（脚本模式时使用） ==========
+
+interface NeteaseSong {
+  id: number;
+  name: string;
+  artists: { name: string }[];
+  album: { name: string; picUrl?: string };
+  duration: number;
+}
+
+async function neteaseSearch(keyword: string, limit = 30): Promise<NeteaseSong[]> {
+  const url = `https://music.163.com/api/search/get?s=${encodeURIComponent(keyword)}&type=1&limit=${limit}&offset=0`;
+  const data = await proxiedFetchJson<{ result?: { songs?: NeteaseSong[] } }>(url, {
+    method: 'GET',
+    headers: { Referer: 'https://music.163.com' },
+  });
+  return data?.result?.songs || [];
+}
+
+async function neteaseLyric(songId: number): Promise<LyricLine[]> {
+  const url = `https://music.163.com/api/song/lyric?id=${songId}&lv=1&kv=1&tv=-1`;
+  try {
+    const data = await proxiedFetchJson<{ lrc?: { lyric: string } }>(url, {
+      headers: { Referer: 'https://music.163.com' },
+    });
+    if (data?.lrc?.lyric) return parseLrc(data.lrc.lyric);
+  } catch (e) {
+    console.warn('获取歌词失败', e);
+  }
+  return [];
+}
+
+function neteaseToTrack(song: NeteaseSong): Track {
+  const artist = song.artists?.map((a) => a.name).join('/') || '未知艺术家';
+  const coverUrl = song.album?.picUrl
+    ? song.album.picUrl.replace('http://', 'https://')
+    : undefined;
+  return {
+    id: `netease-${song.id}`,
+    title: song.name,
+    artist,
+    album: song.album?.name || '未知专辑',
+    coverColors: generateColors(song.name + artist),
+    coverUrl,
+    duration: Math.floor((song.duration || 0) / 1000),
+    platform: 'netease',
+    audioUrl: '',
+    neteaseId: song.id,
+    lyrics: [],
+    tags: ['网易云'],
+    playCount: 0,
+    likeCount: 0,
+    releaseYear: new Date().getFullYear(),
+  };
+}
+
+// ========== 脚本模式：通过 LX Music 脚本获取播放地址 ==========
+
+async function scriptGetMusicUrl(
+  track: Track,
+  quality: MusicQuality = '320k'
+): Promise<string> {
+  const source = getActiveSource();
+  if (!source || source.mode !== 'script') {
+    throw new Error('未配置脚本音源');
+  }
+  const runtime = await getScriptRuntime(source.id, source.url);
+  const lxPlatform = inferLxPlatform(track.platform);
+  const musicInfo: LxMusicInfo = {
+    songmid: track.neteaseId?.toString() || track.id,
+    hash: track.id,
+    songId: track.neteaseId?.toString(),
+    name: track.title,
+    singer: track.artist,
+    source: lxPlatform,
+    img: track.coverUrl,
+    albumName: track.album,
+  };
+  return runtime.getMusicUrl(lxPlatform, musicInfo, quality);
+}
+
 // ========== 搜索 API ==========
 
 export const searchApi = {
@@ -226,53 +230,121 @@ export const searchApi = {
     const source = getActiveSource();
     if (!source) return [];
 
-    const res = await sourceRequest<SourceSearchResult>(
-      `/search?keywords=${encodeURIComponent(keyword)}&limit=${limit}`
-    );
-    const songs = res.result?.songs || [];
-    return songs
-      .filter((s) => s.fee !== 4)
-      .map((s) => sourceToTrack(s, source.id));
+    // 脚本模式：用网易云公共搜索
+    if (source.mode === 'script') {
+      try {
+        const songs = await neteaseSearch(keyword, limit);
+        return songs.map(neteaseToTrack);
+      } catch (e) {
+        console.error('脚本模式搜索失败', e);
+        return [];
+      }
+    }
+
+    // API 模式：调用 REST API
+    try {
+      type ApiSong = {
+        id: number;
+        name: string;
+        artists?: Array<{ name: string }>;
+        ar?: Array<{ name: string }>;
+        album?: { name: string; picUrl?: string };
+        al?: { name: string; picUrl?: string };
+        duration?: number;
+        dt?: number;
+        fee?: number;
+      };
+      type ApiSearchResult = {
+        result?: { songs?: Array<ApiSong> };
+      };
+      const res = await apiRequest<ApiSearchResult>(
+        `/search?keywords=${encodeURIComponent(keyword)}&limit=${limit}`
+      );
+      const songs = res.result?.songs || [];
+      return songs
+        .filter((s) => s.fee !== 4)
+        .map((s) => {
+          const artistList = s.artists || s.ar || [];
+          const artist = artistList.map((a) => a.name).join('/') || '未知艺术家';
+          const albumInfo = s.album || s.al;
+          return {
+            id: `src-${source.id}-${s.id}`,
+            title: s.name,
+            artist,
+            album: albumInfo?.name || '未知专辑',
+            coverColors: generateColors(s.name + artist),
+            coverUrl: albumInfo?.picUrl,
+            duration: Math.floor((s.duration || s.dt || 0) / 1000),
+            platform: 'netease' as Platform,
+            audioUrl: '',
+            neteaseId: s.id,
+            lyrics: [] as LyricLine[],
+            tags: ['网易云'],
+            playCount: 0,
+            likeCount: 0,
+            releaseYear: new Date().getFullYear(),
+          } as Track;
+        });
+    } catch (e) {
+      console.error('API 模式搜索失败', e);
+      return [];
+    }
   },
 
-  async getSongDetail(songIds: number[]): Promise<Track[]> {
-    if (songIds.length === 0) return [];
-    const source = getActiveSource();
-    if (!source) return [];
-
-    const res = await sourceRequest<SourceSongDetailResult>(
-      `/song/detail?ids=${songIds.join(',')}`
-    );
-    return (res.songs || []).map((s) => sourceToTrack(s, source.id));
-  },
-
-  async getSongUrl(songId: number): Promise<string> {
+  /** 兼容旧调用：可传入 trackId(number) 或 Track 对象 */
+  async getSongUrl(trackOrId: Track | number, quality: MusicQuality = '320k'): Promise<string> {
     const source = getActiveSource();
     if (!source) return '';
 
+    const track: Track | null =
+      typeof trackOrId === 'number' ? null : trackOrId;
+    const neteaseId = typeof trackOrId === 'number' ? trackOrId : trackOrId.neteaseId;
+
+    // 脚本模式：必须有 Track 对象
+    if (source.mode === 'script') {
+      if (!track) {
+        console.warn('脚本模式需要 Track 对象，无法仅用 songId 获取 URL');
+        return '';
+      }
+      try {
+        return await scriptGetMusicUrl(track, quality);
+      } catch (e) {
+        console.error('脚本获取 URL 失败', e);
+        return '';
+      }
+    }
+
+    // API 模式
+    if (!neteaseId) return '';
     try {
-      const res = await sourceRequest<SourceSongUrlResult>(
-        `/song/url?id=${songId}`
-      );
+      const res = await apiRequest<{
+        data?: Array<{ url: string; br: number; size: number }>;
+      }>(`/song/url?id=${neteaseId}`);
       return res.data?.[0]?.url || '';
-    } catch {
+    } catch (e) {
+      console.warn('API 获取 URL 失败', e);
       return '';
     }
   },
 
-  async getLyrics(songId: number): Promise<LyricLine[]> {
+  async getLyrics(track: Track): Promise<LyricLine[]> {
+    if (!track.neteaseId) return [];
     const source = getActiveSource();
-    if (!source) return [];
 
+    // 脚本模式：用网易云公共 API
+    if (source?.mode === 'script') {
+      return neteaseLyric(track.neteaseId);
+    }
+
+    // API 模式
+    if (!source || source.mode !== 'api') return [];
     try {
-      const res = await sourceRequest<SourceLyricResult>(
-        `/lyric?id=${songId}`
+      const res = await apiRequest<{ lrc?: { lyric: string } }>(
+        `/lyric?id=${track.neteaseId}`
       );
-      if (res.lrc?.lyric) {
-        return parseLrc(res.lrc.lyric);
-      }
+      if (res.lrc?.lyric) return parseLrc(res.lrc.lyric);
     } catch (e) {
-      console.warn('获取歌词失败', e);
+      console.warn('API 获取歌词失败', e);
     }
     return [];
   },
@@ -283,15 +355,42 @@ export const searchApi = {
 export const playlistApi = {
   async getPlaylistDetail(playlistId: number | string): Promise<Track[]> {
     const source = getActiveSource();
-    if (!source) return [];
+    if (!source || source.mode !== 'api') return [];
 
-    const res = await sourceRequest<SourcePlaylistResult>(
-      `/playlist/detail?id=${playlistId}`
-    );
-    const songs = res.result?.tracks || res.playlist?.tracks || [];
-    return songs
-      .filter((s) => s.fee !== 4)
-      .map((s) => sourceToTrack(s, source.id));
+    try {
+      const res = await apiRequest<{
+        result?: { tracks?: any[] };
+        playlist?: { tracks?: any[] };
+      }>(`/playlist/detail?id=${playlistId}`);
+      const songs = res.result?.tracks || res.playlist?.tracks || [];
+      return songs
+        .filter((s: any) => s.fee !== 4)
+        .map((s: any) => {
+          const artistList = s.artists || s.ar || [];
+          const artist = artistList.map((a: any) => a.name).join('/') || '未知艺术家';
+          const albumInfo = s.album || s.al;
+          return {
+            id: `src-${source.id}-${s.id}`,
+            title: s.name,
+            artist,
+            album: albumInfo?.name || '未知专辑',
+            coverColors: generateColors(s.name + artist),
+            coverUrl: albumInfo?.picUrl,
+            duration: Math.floor((s.duration || s.dt || 0) / 1000),
+            platform: 'netease' as Platform,
+            audioUrl: '',
+            neteaseId: s.id,
+            lyrics: [] as LyricLine[],
+            tags: ['网易云'],
+            playCount: 0,
+            likeCount: 0,
+            releaseYear: new Date().getFullYear(),
+          } as Track;
+        });
+    } catch (e) {
+      console.error('获取歌单失败', e);
+      return [];
+    }
   },
 };
 
@@ -299,55 +398,27 @@ export const playlistApi = {
 
 export const recommendApi = {
   async getRecommendTracks(): Promise<Track[]> {
-    const source = getActiveSource();
-    if (!source) return [];
-
+    // 优先用网易云公共推荐 API（无需登录）
     try {
-      const res = await sourceRequest<SourceRecommendResult>(
-        `/recommend/songs`
-      );
-      const songs = res.data?.dailySongs || res.result || [];
-      return songs.slice(0, 20).map((s) => sourceToTrack(s, source.id));
+      const url = 'https://music.163.com/api/personalized/newsong?limit=20';
+      const data = await proxiedFetchJson<{ result?: Array<any> }>(url, {
+        headers: { Referer: 'https://music.163.com' },
+      });
+      const list = data?.result || [];
+      return list.slice(0, 20).map((item: any) => {
+        const song = item.song || item;
+        return neteaseToTrack({
+          id: song.id,
+          name: song.name,
+          artists: song.artists || song.ar || [],
+          album: song.album || song.al || {},
+          duration: song.duration || song.dt || 0,
+        });
+      });
     } catch (e) {
-      console.warn('获取推荐歌曲失败', e);
+      console.warn('获取推荐失败', e);
       return [];
     }
-  },
-};
-
-// ========== 扫码登录 API ==========
-
-export const qrLoginApi = {
-  async getUnikey(): Promise<string> {
-    const res = await sourceRequest<SourceQrKeyResult>(`/login/qr/key`);
-    const key = res.unikey || res.data?.unikey;
-    if (!key) throw new Error('获取扫码 key 失败');
-    return key;
-  },
-
-  async checkStatus(key: string): Promise<{
-    status: 'waiting' | 'scanned' | 'confirmed' | 'expired';
-    nickname?: string;
-    avatar?: string;
-    cookie?: string;
-  }> {
-    const res = await sourceRequest<SourceQrCheckResult>(
-      `/login/qr/check?key=${key}&timestamp=${Date.now()}`
-    );
-
-    if (res.code === 801) return { status: 'waiting' };
-    if (res.code === 802)
-      return { status: 'scanned', nickname: res.nickname, avatar: res.avatarUrl };
-    if (res.code === 803) {
-      return {
-        status: 'confirmed',
-        nickname: res.nickname || '音乐用户',
-        avatar: res.avatarUrl,
-        cookie: res.cookie,
-      };
-    }
-    if (res.code === 800) return { status: 'expired' };
-    return { status: 'waiting' };
   },
 };
 
@@ -366,3 +437,5 @@ export async function checkAudioPlayable(url: string): Promise<boolean> {
 export function hasActiveSource(): boolean {
   return getActiveSource() !== null;
 }
+
+export { platformLabel };

@@ -50,14 +50,14 @@ export default function Profile() {
         <TopBar title="我的" subtitle="登录后解锁全部功能" />
         <div className="flex flex-col items-center justify-center h-[60vh] px-6">
           <div className="glass rounded-3xl p-8 text-center max-w-sm">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-neon mx-auto mb-4 flex items-center justify-center shadow-neon-purple">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-flow mx-auto mb-4 flex items-center justify-center shadow-md">
               <Music className="w-8 h-8 text-white" />
             </div>
             <h3 className="text-lg font-bold text-white mb-2">登录以查看个人中心</h3>
             <p className="text-sm text-white/60 mb-5">同步你的听歌数据、歌单与成就</p>
             <button
               onClick={() => navigate('/login')}
-              className="w-full py-3 rounded-xl bg-gradient-neon text-white font-semibold text-sm shadow-neon-purple"
+              className="w-full py-3 rounded-xl bg-gradient-flow text-white font-semibold text-sm shadow-md"
             >
               立即登录
             </button>
@@ -91,7 +91,7 @@ export default function Profile() {
               logout();
               navigate('/login');
             }}
-            className="w-9 h-9 rounded-lg glass flex items-center justify-center text-white/70 hover:text-neon-pink"
+            className="w-9 h-9 rounded-lg glass flex items-center justify-center text-white/70 hover:text-salt-accent transition-colors"
           >
             <LogOut className="w-4 h-4" />
           </button>
@@ -99,34 +99,27 @@ export default function Profile() {
       />
 
       <div className="px-4 py-5 pb-32 max-w-2xl mx-auto">
-        {/* 用户头部卡片 */}
+        {/* 用户头部卡片 - 椒盐风格 */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="glass-strong rounded-3xl p-5 mb-4 relative overflow-hidden"
         >
-          {/* 背景装饰 */}
-          <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-neon-purple/20 blur-3xl" />
-          <div className="absolute -bottom-10 -left-10 w-40 h-40 rounded-full bg-neon-cyan/15 blur-3xl" />
+          <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-salt-primary/20 blur-3xl" />
+          <div className="absolute -bottom-10 -left-10 w-40 h-40 rounded-full bg-salt-accent/15 blur-3xl" />
 
           <div className="relative flex items-center gap-4">
-            {/* 头像 */}
+            {/* 头像 - 椒盐风格圆角方形 */}
             <div className="relative">
-              <div className="w-20 h-20 rounded-full bg-gradient-neon p-0.5">
-                <div className="w-full h-full rounded-full bg-space-800 flex items-center justify-center">
-                  <span className="font-display text-2xl font-bold gradient-text">
+              <div className="w-20 h-20 rounded-3xl bg-gradient-flow p-0.5 shadow-md">
+                <div className="w-full h-full rounded-3xl bg-salt-surface flex items-center justify-center">
+                  <span className="text-2xl font-bold gradient-text">
                     {user.nickname.charAt(0)}
                   </span>
                 </div>
               </div>
-              {/* 霓虹环 */}
-              <motion.div
-                className="absolute inset-0 rounded-full border-2 border-neon-cyan"
-                animate={{ opacity: [0.4, 1, 0.4], rotate: [0, 360] }}
-                transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
-              />
               {user.vipLevel > 0 && (
-                <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center shadow-lg">
+                <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center shadow-md">
                   <Crown className="w-4 h-4 text-white" />
                 </div>
               )}
@@ -146,12 +139,12 @@ export default function Profile() {
                 加入于 {user.joinDate} · ID: {user.id}
               </p>
               <div className="flex items-center gap-3 mt-2">
-                <div className="flex items-center gap-1 text-[11px] text-white/70">
-                  <Clock className="w-3 h-3 text-neon-cyan" />
+                <div className="flex items-center gap-1 text-[11px] text-white/65">
+                  <Clock className="w-3 h-3 text-salt-primary" />
                   {formatListenMinutes(user.totalListenMinutes)}
                 </div>
-                <div className="flex items-center gap-1 text-[11px] text-white/70">
-                  <Music className="w-3 h-3 text-neon-pink" />
+                <div className="flex items-center gap-1 text-[11px] text-white/65">
+                  <Music className="w-3 h-3 text-salt-accent" />
                   {user.totalTracks} 首
                 </div>
               </div>
@@ -160,16 +153,16 @@ export default function Profile() {
 
           {/* 数据统计 */}
           <div className="grid grid-cols-3 gap-2 mt-4">
-            <StatCard label="听歌时长" value={formatListenMinutes(user.totalListenMinutes)} color="cyan" />
-            <StatCard label="听歌数量" value={user.totalTracks.toString()} color="pink" />
-            <StatCard label="收藏歌单" value={user.playlists.length.toString()} color="purple" />
+            <StatCard label="听歌时长" value={formatListenMinutes(user.totalListenMinutes)} color="primary" />
+            <StatCard label="听歌数量" value={user.totalTracks.toString()} color="accent" />
+            <StatCard label="收藏歌单" value={user.playlists.length.toString()} color="primary" />
           </div>
         </motion.div>
 
         {/* 第三方账号绑定 */}
         <section className="mb-4">
           <SectionTitle title="已绑定的平台账号" subtitle="同步你的多平台数据" />
-          <div className="glass rounded-2xl p-3 space-y-2">
+          <div className="surface rounded-2xl p-3 space-y-2">
             {PLATFORM_LIST.map((p) => {
               const bound = user.boundPlatforms.includes(p.code);
               const isLoading = pendingPlatform === p.code;
@@ -192,8 +185,8 @@ export default function Profile() {
                   </div>
                   {bound && (
                     <span
-                      className="w-2 h-2 rounded-full animate-pulse-glow"
-                      style={{ background: p.color, boxShadow: `0 0 8px ${p.color}` }}
+                      className="w-2 h-2 rounded-full"
+                      style={{ background: p.color, boxShadow: `0 0 6px ${p.color}` }}
                     />
                   )}
                   <button
@@ -202,8 +195,8 @@ export default function Profile() {
                     className={cn(
                       'px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1',
                       bound
-                        ? 'text-white/60 hover:text-neon-pink hover:bg-white/5'
-                        : 'bg-gradient-neon text-white shadow-neon-purple'
+                        ? 'text-white/60 hover:text-salt-accent hover:bg-white/5'
+                        : 'bg-gradient-flow text-white shadow-md'
                     )}
                   >
                     {isLoading ? (
@@ -230,7 +223,7 @@ export default function Profile() {
         {user.favoriteGenres.length > 0 && (
           <section className="mb-4">
             <SectionTitle title="曲风偏好" subtitle="基于你的听歌行为生成" />
-            <div className="glass rounded-2xl p-4 flex flex-col items-center">
+            <div className="surface rounded-2xl p-4 flex flex-col items-center">
               <GenreRadar data={user.favoriteGenres} size={260} />
               <div className="grid grid-cols-3 gap-2 mt-3 w-full">
                 {user.favoriteGenres.slice(0, 3).map((g) => (
@@ -260,7 +253,7 @@ export default function Profile() {
               className={cn(
                 'flex-1 py-2 rounded-lg text-xs font-medium transition-all',
                 activeTab === tab.key
-                  ? 'bg-gradient-neon text-white shadow-neon-purple'
+                  ? 'bg-gradient-flow text-white shadow-md'
                   : 'text-white/60 hover:text-white'
               )}
             >
@@ -279,7 +272,7 @@ export default function Profile() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.05 }}
                 onClick={() => navigate('/discover')}
-                className="glass rounded-2xl p-3 text-left hover:bg-white/8 transition-colors group"
+                className="surface rounded-2xl p-3 text-left hover:bg-white/8 transition-colors group"
               >
                 <CoverArt
                   colors={pl.coverColors}
@@ -339,7 +332,7 @@ export default function Profile() {
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: idx * 0.05 }}
                   className={cn(
-                    'glass rounded-2xl p-3 relative overflow-hidden',
+                    'surface rounded-2xl p-3 relative overflow-hidden',
                     !ach.unlocked && 'opacity-60'
                   )}
                 >
@@ -351,7 +344,7 @@ export default function Profile() {
                       className={cn(
                         'w-10 h-10 rounded-xl flex items-center justify-center shrink-0',
                         ach.unlocked
-                          ? 'bg-gradient-to-br from-yellow-400 to-orange-500 text-white shadow-lg'
+                          ? 'bg-gradient-to-br from-yellow-400 to-orange-500 text-white shadow-md'
                           : 'bg-white/5 text-white/40'
                       )}
                     >
@@ -366,7 +359,7 @@ export default function Profile() {
                     <div className="mt-2.5">
                       <div className="h-1 bg-white/10 rounded-full overflow-hidden">
                         <div
-                          className="h-full bg-gradient-neon"
+                          className="h-full bg-gradient-flow"
                           style={{ width: `${ach.progress}%` }}
                         />
                       </div>
@@ -386,15 +379,14 @@ export default function Profile() {
   );
 }
 
-function StatCard({ label, value, color }: { label: string; value: string; color: 'cyan' | 'pink' | 'purple' }) {
+function StatCard({ label, value, color }: { label: string; value: string; color: 'primary' | 'accent' }) {
   const colorMap = {
-    cyan: 'text-neon-cyan',
-    pink: 'text-neon-pink',
-    purple: 'text-neon-purple',
+    primary: 'text-salt-primary',
+    accent: 'text-salt-accent',
   };
   return (
     <div className="text-center p-2.5 rounded-xl bg-white/5">
-      <p className={cn('text-lg font-bold font-display', colorMap[color])}>{value}</p>
+      <p className={cn('text-lg font-bold', colorMap[color])}>{value}</p>
       <p className="text-[10px] text-white/50 mt-0.5">{label}</p>
     </div>
   );

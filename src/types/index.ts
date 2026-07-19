@@ -102,18 +102,41 @@ export type PlayMode = 'order' | 'repeat-one' | 'shuffle';
 // ==================== 音源相关 ====================
 
 // 音源类型
-export type SourceType = 'netease' | 'qq' | 'kugou' | 'kuwo' | 'custom';
+export type SourceType = 'netease' | 'qq' | 'kugou' | 'kuwo' | 'mg' | 'custom';
+
+// 音源加载方式
+// - api: REST API 模式（兼容 NeteaseCloudMusicApi 接口）
+// - script: LX Music 脚本模式（在线导入 JS 脚本，通过 globalThis.lx 通信）
+export type SourceMode = 'api' | 'script';
 
 // 音源配置
 export interface MusicSource {
   id: string;
   name: string;
   type: SourceType;
-  baseUrl: string; // 音源 API 基地址
+  mode: SourceMode;
+  // API 模式：API 基地址；脚本模式：脚本 URL 或脚本内容
+  url: string;
   enabled: boolean;
   sortOrder: number;
-  // 可选：音源需要的额外配置（如 token、cookie 等）
-  extra?: Record<string, string>;
+  // 添加时间
+  createdAt: number;
+  // 最后测试状态
+  lastTestOk?: boolean;
+  // 脚本模式缓存：脚本加载后的元信息
+  scriptMeta?: SourceScriptMeta;
+}
+
+// 脚本音源元信息（来自 LX Music 脚本的 send(EVENT_NAMES.inited)）
+export interface SourceScriptMeta {
+  // 脚本支持的平台列表：['kw', 'kg', 'tx', 'wy', 'mg']
+  sources: string[];
+  // 各平台支持的音质
+  qualitys?: Record<string, string[]>;
+  // 脚本名/描述（来自注释）
+  scriptName?: string;
+  scriptVersion?: string;
+  scriptDescription?: string;
 }
 
 // 音源 API 通用响应
@@ -123,3 +146,24 @@ export interface SourceResponse<T = any> {
   result?: T;
   message?: string;
 }
+
+// LX Music 平台代号 → 应用 Platform 的映射
+// kw=酷我, kg=酷狗, tx=QQ, wy=网易云, mg=咪咕
+export type LxPlatform = 'kw' | 'kg' | 'tx' | 'wy' | 'mg';
+
+// LX Music 歌曲信息（传递给脚本 musicUrl action 的 musicInfo）
+export interface LxMusicInfo {
+  songmid: string;
+  hash?: string;
+  songId?: string;
+  albumId?: string;
+  name: string;
+  singer: string;
+  source: LxPlatform;
+  img?: string;
+  albumName?: string;
+  interval?: string;
+}
+
+// 音质等级
+export type MusicQuality = '128k' | '192k' | '320k' | 'flac' | 'flac24bit';

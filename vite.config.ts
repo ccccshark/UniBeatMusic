@@ -17,6 +17,23 @@ export default defineConfig({
     }),
     tsconfigPaths()
   ],
+  define: {
+    // 浏览器环境 Buffer polyfill（LX Music 脚本依赖 Buffer）
+    'process.env': {},
+    global: 'globalThis',
+  },
+  resolve: {
+    alias: {
+      buffer: 'buffer/',
+    },
+  },
+  optimizeDeps: {
+    esbuildOptions: {
+      define: {
+        global: 'globalThis',
+      },
+    },
+  },
   server: {
     host: '0.0.0.0',
     port: 5173,

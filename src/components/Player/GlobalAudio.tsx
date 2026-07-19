@@ -52,9 +52,9 @@ export default function GlobalAudio() {
       let url = currentTrack.audioUrl;
 
       // 如果没有 audioUrl 且有源配置，动态获取
-      if (!url && hasActiveSource() && currentTrack.neteaseId) {
+      if (!url && hasActiveSource()) {
         try {
-          url = await searchApi.getSongUrl(currentTrack.neteaseId);
+          url = await searchApi.getSongUrl(currentTrack);
         } catch (e) {
           console.warn('获取音频URL失败', e);
         }

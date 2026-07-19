@@ -1,87 +1,42 @@
 import { motion } from 'framer-motion';
 import type { CoverColors } from '@/types';
 
-// 科技感播放器动态背景
+// 椒盐风格播放器背景：基于封面色的柔流光，无扫描线/粒子等霓虹元素
 export default function PlayerBackground({ colors }: { colors: CoverColors }) {
   return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {/* 基础渐变 */}
+    <div className="absolute inset-0 overflow-hidden pointer-events-none bg-salt-bg">
+      {/* 顶部主色流光 */}
       <div
-        className="absolute inset-0"
-        style={{
-          background: `
-            radial-gradient(circle at 30% 20%, ${colors.from}44 0%, transparent 50%),
-            radial-gradient(circle at 70% 80%, ${colors.to}44 0%, transparent 50%),
-            linear-gradient(180deg, #0A0E1A 0%, #161C30 50%, #0A0E1A 100%)
-          `,
-        }}
+        className="absolute -top-32 left-1/2 -translate-x-1/2 w-[600px] h-[500px] rounded-full blur-[120px] opacity-50"
+        style={{ background: colors.from }}
+      />
+      {/* 底部辅助色 */}
+      <div
+        className="absolute -bottom-32 right-0 w-[500px] h-[400px] rounded-full blur-[120px] opacity-40"
+        style={{ background: colors.to }}
+      />
+      {/* 左侧点缀色 */}
+      <div
+        className="absolute top-1/2 -left-20 w-[300px] h-[300px] rounded-full blur-[100px] opacity-30"
+        style={{ background: colors.accent }}
       />
 
-      {/* 旋转光晕 */}
+      {/* 缓慢旋转的彩色光晕（椒盐特征：根据封面色彩流动） */}
       <motion.div
-        className="absolute top-1/2 left-1/2 w-[600px] h-[600px] rounded-full blur-[80px] opacity-40"
+        className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[400px] h-[400px] rounded-full blur-[80px] opacity-25"
         style={{
           background: `conic-gradient(from 0deg, ${colors.from}, ${colors.accent}, ${colors.to}, ${colors.from})`,
         }}
         animate={{ rotate: 360 }}
-        transition={{ duration: 30, repeat: Infinity, ease: 'linear' }}
+        transition={{ duration: 40, repeat: Infinity, ease: 'linear' }}
       />
 
-      {/* 网格背景 */}
-      <div
-        className="absolute inset-0 opacity-20"
-        style={{
-          backgroundImage: `
-            linear-gradient(${colors.accent}22 1px, transparent 1px),
-            linear-gradient(90deg, ${colors.accent}22 1px, transparent 1px)
-          `,
-          backgroundSize: '50px 50px',
-          maskImage: 'radial-gradient(ellipse at center, black 30%, transparent 80%)',
-        }}
-      />
+      {/* 细微网格 */}
+      <div className="absolute inset-0 grid-bg opacity-40" />
 
-      {/* 扫描线 */}
-      <motion.div
-        className="absolute inset-x-0 h-32"
-        style={{
-          background: `linear-gradient(180deg, transparent 0%, ${colors.from}33 50%, transparent 100%)`,
-        }}
-        animate={{ y: ['-20vh', '100vh'] }}
-        transition={{ duration: 5, repeat: Infinity, ease: 'linear' }}
-      />
-
-      {/* 漂浮粒子 */}
-      {Array.from({ length: 20 }).map((_, i) => {
-        const left = (i * 37) % 100;
-        const delay = (i * 0.7) % 5;
-        const duration = 6 + (i % 5);
-        const size = 1 + (i % 3);
-        return (
-          <motion.div
-            key={i}
-            className="absolute rounded-full"
-            style={{
-              left: `${left}%`,
-              width: `${size}px`,
-              height: `${size}px`,
-              background: i % 2 === 0 ? colors.from : colors.accent,
-              boxShadow: `0 0 ${size * 3}px ${i % 2 === 0 ? colors.from : colors.accent}`,
-            }}
-            initial={{ y: '100vh', opacity: 0 }}
-            animate={{ y: '-10vh', opacity: [0, 0.8, 0] }}
-            transition={{
-              duration,
-              delay,
-              repeat: Infinity,
-              ease: 'linear',
-            }}
-          />
-        );
-      })}
-
-      {/* 顶部渐变遮罩 */}
-      <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-space-900 to-transparent" />
-      <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-space-900 to-transparent" />
+      {/* 顶部底部渐变遮罩 - 让 UI 更清晰 */}
+      <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-salt-bg to-transparent" />
+      <div className="absolute inset-x-0 bottom-0 h-64 bg-gradient-to-t from-salt-bg via-salt-bg/85 to-transparent" />
     </div>
   );
 }
