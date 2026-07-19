@@ -52,6 +52,7 @@ export default function RecommendCard({ track, onPlay, onOpenPlayer }: Recommend
         >
           <CoverArt
             colors={track.coverColors}
+            coverUrl={track.coverUrl}
             title={track.title}
             size="xl"
             className="shadow-2xl cursor-pointer hover:scale-105 transition-transform"

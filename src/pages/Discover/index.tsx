@@ -7,8 +7,9 @@ import PlatformBadge from '@/components/PlatformBadge';
 import CoverArt from '@/components/CoverArt';
 import { usePlayerStore } from '@/store/playerStore';
 import { mockApi } from '@/services/mockApi';
+import { recommendApi } from '@/services/musicApi';
 import { formatPlayCount } from '@/lib/format';
-import type { Playlist, Chart } from '@/types';
+import type { Playlist, Chart, Track } from '@/types';
 import { cn } from '@/lib/utils';
 
 const GENRES = ['全部', '流行', '电子', '国风', '嘻哈', '民谣', '摇滚', 'Lo-Fi', '夏日', '甜系'];
@@ -23,6 +24,7 @@ export default function Discover() {
   const { playTrack } = usePlayerStore();
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [charts, setCharts] = useState<Chart[]>([]);
+  const [onlineTracks, setOnlineTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeGenre, setActiveGenre] = useState('全部');
   const [activeChart, setActiveChart] = useState(0);
@@ -38,6 +40,12 @@ export default function Discover() {
         setLoading(false);
       }
     );
+    // 异步加载在线推荐歌曲（不阻塞页面）
+    recommendApi.getRecommendTracks().then((tracks) => {
+      if (!cancelled && tracks.length > 0) {
+        setOnlineTracks(tracks.slice(0, 12));
+      }
+    }).catch((e) => console.warn('在线推荐加载失败', e));
     return () => {
       cancelled = true;
     };
@@ -54,7 +62,10 @@ export default function Discover() {
         title="发现"
         subtitle="探索更多音乐"
         right={
-          <button className="w-9 h-9 rounded-lg glass flex items-center justify-center text-white/70 hover:text-neon-cyan">
+          <button
+            onClick={() => navigate('/login')}
+            className="w-9 h-9 rounded-lg glass flex items-center justify-center text-white/70 hover:text-neon-cyan"
+          >
             <Search className="w-4 h-4" />
           </button>
         }
@@ -76,7 +87,7 @@ export default function Discover() {
             <div className="flex-1">
               <p className="text-sm font-bold text-white">为你推荐</p>
               <p className="text-[10px] text-white/60 mt-0.5">
-                基于你的曲风偏好与跨平台数据智能生成
+                基于网易云热门榜单智能推荐
               </p>
             </div>
             <button
@@ -88,6 +99,49 @@ export default function Discover() {
           </div>
         </motion.div>
       </div>
+
+      {/* 在线推荐歌曲 */}
+      {onlineTracks.length > 0 && (
+        <section className="px-4 pt-5">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+              在线热歌
+            </h3>
+            <span className="text-[10px] text-white/50">实时更新</span>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            {onlineTracks.slice(0, 9).map((track, idx) => (
+              <motion.button
+                key={track.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.04 }}
+                onClick={() => {
+                  playTrack(track, onlineTracks);
+                  navigate(`/player/${track.id}`);
+                }}
+                className="glass rounded-xl p-2 text-left hover:bg-white/8 transition-colors group"
+              >
+                <div className="relative mb-1.5">
+                  <CoverArt
+                    colors={track.coverColors}
+                    coverUrl={track.coverUrl}
+                    title={track.title}
+                    size="full"
+                    className="aspect-square"
+                  />
+                  <div className="absolute inset-0 rounded-md bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                    <Play className="w-3.5 h-3.5 text-white" fill="white" />
+                  </div>
+                </div>
+                <p className="text-[10px] font-medium text-white truncate">{track.title}</p>
+                <p className="text-[9px] text-white/50 truncate">{track.artist}</p>
+              </motion.button>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* 分类导航 */}
       <div className="px-4 pt-4">
@@ -232,7 +286,7 @@ export default function Discover() {
 
               {/* 封面 */}
               <div className="relative shrink-0">
-                <CoverArt colors={track.coverColors} title={track.title} size="sm" />
+                <CoverArt colors={track.coverColors} coverUrl={track.coverUrl} title={track.title} size="sm" />
                 <div className="absolute inset-0 rounded-md bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
                   <Play className="w-3.5 h-3.5 text-white" fill="white" />
                 </div>

@@ -31,9 +31,11 @@ export interface Track {
   artist: string;
   album: string;
   coverColors: CoverColors;
+  coverUrl?: string; // 真实封面图片 URL（网易云）
   duration: number; // 秒
   platform: Platform;
   audioUrl: string;
+  neteaseId?: number; // 网易云歌曲 ID（用于获取歌词等）
   lyrics: LyricLine[];
   tags: string[];
   playCount: number;

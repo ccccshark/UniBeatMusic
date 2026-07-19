@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { Disc3 } from 'lucide-react';
+import { useState } from 'react';
 import type { Track } from '@/types';
 import PlatformBadge from '@/components/PlatformBadge';
 
@@ -11,6 +12,9 @@ interface VinylDiscProps {
 
 // 3D 旋转唱片
 export default function VinylDisc({ track, isPlaying, size = 280 }: VinylDiscProps) {
+  const [coverError, setCoverError] = useState(false);
+  const showCover = track.coverUrl && !coverError;
+
   return (
     <div
       className="relative"
@@ -66,20 +70,33 @@ export default function VinylDisc({ track, isPlaying, size = 280 }: VinylDiscPro
           }}
         />
 
-        {/* 中心标签 */}
+        {/* 中心标签（显示真实封面或程序化封面） */}
         <div
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full flex flex-col items-center justify-center"
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full flex flex-col items-center justify-center overflow-hidden"
           style={{
             width: '38%',
             height: '38%',
-            background: `linear-gradient(135deg, ${track.coverColors.from} 0%, ${track.coverColors.accent} 100%)`,
+            background: showCover
+              ? 'transparent'
+              : `linear-gradient(135deg, ${track.coverColors.from} 0%, ${track.coverColors.accent} 100%)`,
             boxShadow: `0 0 20px ${track.coverColors.accent}66, inset 0 0 10px rgba(0,0,0,0.3)`,
           }}
         >
-          <span className="font-display font-bold text-white text-xl drop-shadow-lg">
-            {track.title.charAt(0)}
-          </span>
-          <span className="text-[8px] text-white/80 mt-0.5 tracking-wider">{track.artist}</span>
+          {showCover ? (
+            <img
+              src={track.coverUrl}
+              alt={track.title}
+              onError={() => setCoverError(true)}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <>
+              <span className="font-display font-bold text-white text-xl drop-shadow-lg">
+                {track.title.charAt(0)}
+              </span>
+              <span className="text-[8px] text-white/80 mt-0.5 tracking-wider">{track.artist}</span>
+            </>
+          )}
         </div>
 
         {/* 中心轴孔 */}

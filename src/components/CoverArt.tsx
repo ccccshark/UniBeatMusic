@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import type { CoverColors } from '@/types';
 import { cn } from '@/lib/utils';
 
@@ -9,6 +9,7 @@ interface CoverArtProps {
   className?: string;
   showText?: boolean;
   shape?: 'square' | 'circle';
+  coverUrl?: string; // 真实封面图片 URL
 }
 
 const SIZE_MAP = {
@@ -19,7 +20,7 @@ const SIZE_MAP = {
   full: 'w-full h-full text-4xl rounded-2xl',
 };
 
-// 程序化生成封面：渐变 + 几何图形 + 标题首字
+// 封面组件：优先显示真实封面，加载失败回退到程序化生成
 export default function CoverArt({
   colors,
   title = '',
@@ -27,7 +28,11 @@ export default function CoverArt({
   className,
   showText = true,
   shape = 'square',
+  coverUrl,
 }: CoverArtProps) {
+  const [imgError, setImgError] = useState(false);
+  const showImage = coverUrl && !imgError;
+
   // 用标题做种子，生成稳定的几何图案
   const pattern = useMemo(() => {
     const seed = title.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
@@ -52,52 +57,69 @@ export default function CoverArt({
         background: `linear-gradient(135deg, ${colors.from} 0%, ${colors.to} 100%)`,
       }}
     >
-      {/* 装饰圆 */}
-      <div
-        className="absolute rounded-full opacity-40 mix-blend-screen"
-        style={{
-          width: `${pattern.ringSize * 2}%`,
-          height: `${pattern.ringSize * 2}%`,
-          left: `${pattern.blobX}%`,
-          top: `${pattern.blobY}%`,
-          background: colors.accent,
-          filter: 'blur(8px)',
-        }}
-      />
-      {/* 几何环 */}
-      <div
-        className="absolute rounded-full border-2 opacity-30"
-        style={{
-          width: `${pattern.ringSize * 3}%`,
-          height: `${pattern.ringSize * 3}%`,
-          borderColor: colors.accent,
-          transform: `rotate(${pattern.rotate}deg)`,
-        }}
-      />
-      {/* 网格 */}
-      <div
-        className="absolute inset-0 opacity-20"
-        style={{
-          backgroundImage:
-            'linear-gradient(rgba(255,255,255,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.3) 1px, transparent 1px)',
-          backgroundSize: '12px 12px',
-        }}
-      />
-      {/* 标题首字 */}
-      {showText && (
-        <span
-          className="relative z-10 font-bold text-white"
-          style={{
-            textShadow: '0 2px 8px rgba(0,0,0,0.4)',
-            fontSize: size === 'full' ? '5rem' : size === 'xl' ? '2.5rem' : size === 'lg' ? '1.75rem' : size === 'md' ? '1.2rem' : '0.9rem',
-          }}
-        >
-          {firstChar}
-        </span>
+      {/* 真实封面图片 */}
+      {showImage && (
+        <img
+          src={coverUrl}
+          alt={title}
+          loading="lazy"
+          onError={() => setImgError(true)}
+          className="absolute inset-0 w-full h-full object-cover"
+        />
       )}
+
+      {/* 程序化生成背景（图片加载失败时显示） */}
+      {!showImage && (
+        <>
+          {/* 装饰圆 */}
+          <div
+            className="absolute rounded-full opacity-40 mix-blend-screen"
+            style={{
+              width: `${pattern.ringSize * 2}%`,
+              height: `${pattern.ringSize * 2}%`,
+              left: `${pattern.blobX}%`,
+              top: `${pattern.blobY}%`,
+              background: colors.accent,
+              filter: 'blur(8px)',
+            }}
+          />
+          {/* 几何环 */}
+          <div
+            className="absolute rounded-full border-2 opacity-30"
+            style={{
+              width: `${pattern.ringSize * 3}%`,
+              height: `${pattern.ringSize * 3}%`,
+              borderColor: colors.accent,
+              transform: `rotate(${pattern.rotate}deg)`,
+            }}
+          />
+          {/* 网格 */}
+          <div
+            className="absolute inset-0 opacity-20"
+            style={{
+              backgroundImage:
+                'linear-gradient(rgba(255,255,255,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.3) 1px, transparent 1px)',
+              backgroundSize: '12px 12px',
+            }}
+          />
+          {/* 标题首字 */}
+          {showText && (
+            <span
+              className="relative z-10 font-bold text-white"
+              style={{
+                textShadow: '0 2px 8px rgba(0,0,0,0.4)',
+                fontSize: size === 'full' ? '5rem' : size === 'xl' ? '2.5rem' : size === 'lg' ? '1.75rem' : size === 'md' ? '1.2rem' : '0.9rem',
+              }}
+            >
+              {firstChar}
+            </span>
+          )}
+        </>
+      )}
+
       {/* 高光 */}
       <div
-        className="absolute inset-0 opacity-30"
+        className="absolute inset-0 opacity-30 pointer-events-none"
         style={{
           background:
             'linear-gradient(135deg, rgba(255,255,255,0.4) 0%, transparent 50%, rgba(0,0,0,0.2) 100%)',

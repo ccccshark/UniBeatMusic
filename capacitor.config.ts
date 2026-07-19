@@ -6,7 +6,13 @@ const config: CapacitorConfig = {
   webDir: 'dist',
   server: {
     androidScheme: 'https',
-    allowNavigation: ['*'],
+    allowNavigation: [
+      'music.163.com',
+      '*.music.126.net',
+      '*.music.163.com',
+      'api.qrserver.com',
+      '*',
+    ],
   },
   plugins: {
     SplashScreen: {
