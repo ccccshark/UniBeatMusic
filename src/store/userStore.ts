@@ -1,109 +1,54 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { Platform, UserProfile } from '@/types';
-import { mockApi } from '@/services/mockApi';
-import { EMPTY_USER } from '@/data/users';
+import type { UserProfile } from '@/types';
+
+const EMPTY_USER: UserProfile = {
+  id: 'guest',
+  nickname: '音乐爱好者',
+  avatar: '',
+  vipLevel: 0,
+  totalListenMinutes: 0,
+  totalTracks: 0,
+  joinDate: new Date().toISOString(),
+};
 
 interface UserState {
   user: UserProfile;
   isLoggedIn: boolean;
   likedTrackIds: string[];
   logging: boolean;
-  // 登录方式
   loginType: 'mock' | 'netease' | null;
-  // 原有方法
-  loginWithPlatform: (platform: Platform) => Promise<void>;
-  loginWithEmail: (email: string, password: string) => Promise<void>;
-  loginAsGuest: () => Promise<void>;
   logout: () => void;
-  bindPlatform: (platform: Platform) => Promise<void>;
-  unbindPlatform: (platform: Platform) => Promise<void>;
   toggleLike: (trackId: string) => void;
   isLiked: (trackId: string) => boolean;
+  initGuest: () => void;
 }
 
 export const useUserStore = create<UserState>()(
   persist(
     (set, get) => ({
-      user: EMPTY_USER,
-      isLoggedIn: false,
+      user: { ...EMPTY_USER },
+      isLoggedIn: true,
       likedTrackIds: [],
       logging: false,
-      loginType: null,
+      loginType: 'mock',
 
-      loginWithPlatform: async (platform) => {
-        set({ logging: true });
-        try {
-          const user = await mockApi.loginWithPlatform(platform);
+      initGuest: () => {
+        if (!get().isLoggedIn) {
           set({
-            user,
+            user: { ...EMPTY_USER },
             isLoggedIn: true,
-            logging: false,
             loginType: 'mock',
           });
-        } catch (e) {
-          set({ logging: false });
-          throw e;
-        }
-      },
-
-      loginWithEmail: async (email, password) => {
-        set({ logging: true });
-        try {
-          const user = await mockApi.loginWithEmail(email, password);
-          set({
-            user,
-            isLoggedIn: true,
-            logging: false,
-            loginType: 'mock',
-          });
-        } catch (e) {
-          set({ logging: false });
-          throw e;
-        }
-      },
-
-      loginAsGuest: async () => {
-        set({ logging: true });
-        try {
-          const user = await mockApi.loginAsGuest();
-          set({
-            user,
-            isLoggedIn: true,
-            logging: false,
-            loginType: 'mock',
-          });
-        } catch (e) {
-          set({ logging: false });
-          throw e;
         }
       },
 
       logout: () => {
         set({
-          user: EMPTY_USER,
-          isLoggedIn: false,
+          user: { ...EMPTY_USER },
+          isLoggedIn: true,
           likedTrackIds: [],
-          loginType: null,
-        });
-      },
-
-      bindPlatform: async (platform) => {
-        await mockApi.bindPlatform(platform);
-        const user = get().user;
-        if (!user.boundPlatforms.includes(platform)) {
-          set({ user: { ...user, boundPlatforms: [...user.boundPlatforms, platform] } });
-        }
-      },
-
-      unbindPlatform: async (platform) => {
-        await mockApi.unbindPlatform(platform);
-        const user = get().user;
-        set({
-          user: {
-            ...user,
-            boundPlatforms: user.boundPlatforms.filter((p) => p !== platform),
-          },
+          loginType: 'mock',
         });
       },
 

@@ -5,6 +5,7 @@ import { usePlayerStore } from '@/store/playerStore';
 import CoverArt from '@/components/CoverArt';
 import PlatformBadge from '@/components/PlatformBadge';
 import { formatDuration } from '@/lib/format';
+import { getTrackTitle, getTrackArtist, getTrackCoverColors } from '@/lib/trackUtils';
 
 interface MiniPlayerProps {
   loading?: boolean;
@@ -24,6 +25,9 @@ export default function MiniPlayer({ loading = false }: MiniPlayerProps) {
   if (!currentTrack) return null;
 
   const progress = duration > 0 ? currentTime / duration : 0;
+  const title = getTrackTitle(currentTrack);
+  const artist = getTrackArtist(currentTrack);
+  const coverColors = getTrackCoverColors(currentTrack);
 
   const openFullPlayer = () => {
     navigate(`/player/${currentTrack.id}`);
@@ -42,7 +46,7 @@ export default function MiniPlayer({ loading = false }: MiniPlayerProps) {
           {/* 进度条 */}
           <div className="h-0.5 bg-white/10 relative">
             <motion.div
-              className="h-full bg-gradient-neon"
+              className="h-full bg-gradient-flow"
               style={{ width: `${progress * 100}%` }}
             />
           </div>
@@ -54,8 +58,8 @@ export default function MiniPlayer({ loading = false }: MiniPlayerProps) {
               className="relative shrink-0 group"
             >
               <CoverArt
-                colors={currentTrack.coverColors}
-                title={currentTrack.title}
+                colors={coverColors}
+                title={title}
                 size="md"
                 className={isPlaying ? 'animate-spin-slow' : ''}
                 shape="square"
@@ -71,11 +75,11 @@ export default function MiniPlayer({ loading = false }: MiniPlayerProps) {
               className="flex-1 min-w-0 text-left"
             >
               <div className="flex items-center gap-1.5">
-                <p className="text-sm font-semibold text-white truncate">{currentTrack.title}</p>
+                <p className="text-sm font-semibold text-white truncate">{title}</p>
                 <PlatformBadge platform={currentTrack.platform} size="xs" />
               </div>
               <p className="text-xs text-white/60 truncate">
-                {currentTrack.artist} · {formatDuration(currentTime)} / {formatDuration(duration)}
+                {artist} · {formatDuration(currentTime)} / {formatDuration(duration)}
               </p>
             </button>
 
@@ -83,11 +87,11 @@ export default function MiniPlayer({ loading = false }: MiniPlayerProps) {
             <div className="flex items-center gap-1 shrink-0">
               <button
                 onClick={togglePlay}
-                className="w-9 h-9 rounded-full glass flex items-center justify-center text-white hover:text-neon-cyan hover:bg-white/10 transition-colors"
+                className="w-9 h-9 rounded-full glass flex items-center justify-center text-white hover:text-salt-accent hover:bg-white/10 transition-colors"
                 disabled={loading}
               >
                 {loading ? (
-                  <Loader2 className="w-4 h-4 animate-spin text-neon-cyan" />
+                  <Loader2 className="w-4 h-4 animate-spin text-salt-accent" />
                 ) : isPlaying ? (
                   <Pause className="w-4 h-4" fill="currentColor" />
                 ) : (
@@ -96,7 +100,7 @@ export default function MiniPlayer({ loading = false }: MiniPlayerProps) {
               </button>
               <button
                 onClick={next}
-                className="w-9 h-9 rounded-full glass flex items-center justify-center text-white hover:text-neon-cyan hover:bg-white/10 transition-colors"
+                className="w-9 h-9 rounded-full glass flex items-center justify-center text-white hover:text-salt-accent hover:bg-white/10 transition-colors"
               >
                 <SkipForward className="w-4 h-4" fill="currentColor" />
               </button>

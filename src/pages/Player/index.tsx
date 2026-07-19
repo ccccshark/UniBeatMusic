@@ -26,8 +26,8 @@ import FrequencyBars from '@/components/Visualizer/FrequencyBars';
 import RadialProgress from '@/components/Visualizer/RadialProgress';
 import { usePlayerStore } from '@/store/playerStore';
 import { useUserStore } from '@/store/userStore';
-import { mockApi } from '@/services/mockApi';
 import { formatDuration } from '@/lib/format';
+import { getTrackTitle, getTrackArtist, getTrackCoverColors, parseLrc } from '@/lib/trackUtils';
 import type { Track, PlayMode } from '@/types';
 import { cn } from '@/lib/utils';
 
@@ -63,10 +63,14 @@ export default function Player() {
       setTrack(currentTrack);
       return;
     }
-    mockApi.getTrackById(trackId).then((t) => {
-      setTrack(t);
-      playTrack(t, playlist.length > 0 ? playlist : [t]);
-    });
+    // 如果没有匹配的歌曲，使用当前播放列表中的第一首
+    if (playlist.length > 0) {
+      const found = playlist.find((t) => t.id === trackId);
+      if (found) {
+        setTrack(found);
+        playTrack(found, playlist);
+      }
+    }
   }, [trackId, currentTrack, playlist, playTrack]);
 
   const displayTrack = track ?? currentTrack;
@@ -82,7 +86,11 @@ export default function Player() {
 
   const liked = isLiked(displayTrack.id);
   const progress = duration > 0 ? currentTime / duration : 0;
-  const coverColor = displayTrack.coverColors.from;
+  const coverColors = getTrackCoverColors(displayTrack);
+  const coverColor = coverColors.from;
+  const trackTitle = getTrackTitle(displayTrack);
+  const trackArtist = getTrackArtist(displayTrack);
+  const trackAlbum = displayTrack.album?.name || '';
 
   const handleSeek = (time: number) => {
     if (audioElement) {
@@ -105,7 +113,7 @@ export default function Player() {
 
   return (
     <div className="relative min-h-screen bg-salt-bg overflow-hidden">
-      <PlayerBackground colors={displayTrack.coverColors} />
+      <PlayerBackground colors={coverColors} />
 
       {/* 顶部栏 - 椒盐风格简洁 */}
       <header className="relative z-20 flex items-center justify-between px-5 py-4">
@@ -120,7 +128,7 @@ export default function Player() {
             正在播放
           </p>
           <p className="text-sm font-semibold text-white truncate max-w-[200px]">
-            {displayTrack.title}
+            {trackTitle}
           </p>
         </div>
         <button
@@ -176,10 +184,10 @@ export default function Player() {
               {/* 歌曲信息 */}
               <div className="text-center mb-4">
                 <h1 className="text-2xl font-bold text-white">
-                  {displayTrack.title}
+                  {trackTitle}
                 </h1>
                 <p className="text-sm text-white/65 mt-1.5">
-                  {displayTrack.artist} · {displayTrack.album}
+                  {trackArtist} · {trackAlbum}
                 </p>
                 <div className="flex flex-wrap items-center justify-center gap-1.5 mt-3">
                   {displayTrack.tags.slice(0, 4).map((tag) => (
@@ -227,13 +235,13 @@ export default function Player() {
               </div>
 
               <div className="text-center mb-2">
-                <h2 className="text-xl font-bold text-white">{displayTrack.title}</h2>
-                <p className="text-xs text-white/55 mt-1">{displayTrack.artist}</p>
+                <h2 className="text-xl font-bold text-white">{trackTitle}</h2>
+                <p className="text-xs text-white/55 mt-1">{trackArtist}</p>
               </div>
 
               {/* 歌词 */}
               <LyricView
-                lyrics={displayTrack.lyrics}
+                lyrics={parseLrc(displayTrack.lyrics)}
                 currentTime={currentTime}
                 onSeek={handleSeek}
                 className="h-[40vh] w-full"
