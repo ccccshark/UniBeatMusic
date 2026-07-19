@@ -1,0 +1,143 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: "Noto Sans SC", "HarmonyOS Sans SC", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color-scheme: dark;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: #0A0E1A;
+  color: #E5E7EB;
+  overflow-x: hidden;
+}
+
+/* 全局滚动条 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+}
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #00F0FF 0%, #7B2FF7 100%);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #00F0FF 0%, #FF2E9F 100%);
+}
+
+@layer components {
+  /* 玻璃拟态卡片 */
+  .glass {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  .glass-strong {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.04) 100%);
+    backdrop-filter: blur(28px) saturate(200%);
+    -webkit-backdrop-filter: blur(28px) saturate(200%);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+  }
+  /* 霓虹文字 */
+  .neon-text-cyan {
+    color: #00F0FF;
+    text-shadow: 0 0 8px rgba(0, 240, 255, 0.6), 0 0 16px rgba(0, 240, 255, 0.3);
+  }
+  .neon-text-pink {
+    color: #FF2E9F;
+    text-shadow: 0 0 8px rgba(255, 46, 159, 0.6), 0 0 16px rgba(255, 46, 159, 0.3);
+  }
+  .neon-border-cyan {
+    box-shadow: 0 0 0 1px rgba(0, 240, 255, 0.5), 0 0 20px rgba(0, 240, 255, 0.3), inset 0 0 12px rgba(0, 240, 255, 0.1);
+  }
+  .neon-border-pink {
+    box-shadow: 0 0 0 1px rgba(255, 46, 159, 0.5), 0 0 20px rgba(255, 46, 159, 0.3), inset 0 0 12px rgba(255, 46, 159, 0.1);
+  }
+  /* 渐变文字 */
+  .gradient-text {
+    background: linear-gradient(135deg, #00F0FF 0%, #7B2FF7 50%, #FF2E9F 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-size: 200% auto;
+  }
+  /* 隐藏滚动条但保留滚动 */
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  /* 网格背景 */
+  .grid-bg {
+    background-image:
+      linear-gradient(rgba(0, 240, 255, 0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 240, 255, 0.06) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+  /* 扫描线 */
+  .scan-line {
+    background: linear-gradient(180deg, transparent 0%, rgba(0, 240, 255, 0.4) 50%, transparent 100%);
+  }
+}
+
+/* 滚动 snap 容器 */
+.snap-container {
+  scroll-snap-type: y mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+.snap-item {
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+
+/* 选择高亮 */
+::selection {
+  background: rgba(0, 240, 255, 0.3);
+  color: #fff;
+}
+
+/* 移动端优化 */
+@media (max-width: 768px) {
+  html, body, #root {
+    height: 100vh;
+    height: 100dvh;
+    overscroll-behavior-y: none;
+  }
+  
+  .snap-container {
+    scroll-snap-type: y proximity;
+  }
+  
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Capacitor 应用环境下的优化 */
+@media (display-mode: standalone) {
+  html, body, #root {
+    height: 100vh;
+    height: 100dvh;
+  }
+}

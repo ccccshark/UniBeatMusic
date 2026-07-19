@@ -1,0 +1,7 @@
+// 生成调试签名 keystore 的脚本说明
+// 已使用系统默认 debug.keystore 签名
+
+ext {
+    // Release 签名配置（实际发布时需要替换为自己的 keystore）
+    // 可以通过 keytool -genkey -v -keystore unibeat.keystore -alias unibeat -keyalg RSA -keysize 2048 -validity 10000 生成
+}

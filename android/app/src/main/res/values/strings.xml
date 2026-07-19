@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">UniBeat</string>
+    <string name="title_activity_main">UniBeat</string>
+    <string name="package_name">com.unibeat.music</string>
+    <string name="custom_url_scheme">com.unibeat.music</string>
+</resources>
