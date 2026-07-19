@@ -1,12 +1,16 @@
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Pause, SkipForward, ChevronUp } from 'lucide-react';
+import { Play, Pause, SkipForward, ChevronUp, Loader2 } from 'lucide-react';
 import { usePlayerStore } from '@/store/playerStore';
 import CoverArt from '@/components/CoverArt';
 import PlatformBadge from '@/components/PlatformBadge';
 import { formatDuration } from '@/lib/format';
 
-export default function MiniPlayer() {
+interface MiniPlayerProps {
+  loading?: boolean;
+}
+
+export default function MiniPlayer({ loading = false }: MiniPlayerProps) {
   const navigate = useNavigate();
   const {
     currentTrack,
@@ -80,8 +84,15 @@ export default function MiniPlayer() {
               <button
                 onClick={togglePlay}
                 className="w-9 h-9 rounded-full glass flex items-center justify-center text-white hover:text-neon-cyan hover:bg-white/10 transition-colors"
+                disabled={loading}
               >
-                {isPlaying ? <Pause className="w-4 h-4" fill="currentColor" /> : <Play className="w-4 h-4 ml-0.5" fill="currentColor" />}
+                {loading ? (
+                  <Loader2 className="w-4 h-4 animate-spin text-neon-cyan" />
+                ) : isPlaying ? (
+                  <Pause className="w-4 h-4" fill="currentColor" />
+                ) : (
+                  <Play className="w-4 h-4 ml-0.5" fill="currentColor" />
+                )}
               </button>
               <button
                 onClick={next}

@@ -98,3 +98,28 @@ export type FeedFilter = 'all' | Platform;
 
 // 播放模式
 export type PlayMode = 'order' | 'repeat-one' | 'shuffle';
+
+// ==================== 音源相关 ====================
+
+// 音源类型
+export type SourceType = 'netease' | 'qq' | 'kugou' | 'kuwo' | 'custom';
+
+// 音源配置
+export interface MusicSource {
+  id: string;
+  name: string;
+  type: SourceType;
+  baseUrl: string; // 音源 API 基地址
+  enabled: boolean;
+  sortOrder: number;
+  // 可选：音源需要的额外配置（如 token、cookie 等）
+  extra?: Record<string, string>;
+}
+
+// 音源 API 通用响应
+export interface SourceResponse<T = any> {
+  code: number;
+  data?: T;
+  result?: T;
+  message?: string;
+}

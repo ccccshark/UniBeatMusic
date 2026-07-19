@@ -1,5 +1,6 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { usePlayerStore } from '@/store/playerStore';
+import { searchApi, hasActiveSource } from '@/services/musicApi';
 import MiniPlayer from './MiniPlayer';
 
 // 全局音频控制器：管理单一 audio 元素，桥接 playerStore
@@ -15,6 +16,7 @@ export default function GlobalAudio() {
     setPlaying,
     next,
   } = usePlayerStore();
+  const [loadingUrl, setLoadingUrl] = useState(false);
 
   // 注册 audio 元素到 store
   useEffect(() => {
@@ -36,15 +38,47 @@ export default function GlobalAudio() {
     }
   }, [isPlaying, currentTrack, setPlaying]);
 
-  // 切歌时重设 src 并播放
+  // 切歌时获取音频URL并播放
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio || !currentTrack) return;
-    audio.src = currentTrack.audioUrl;
-    audio.load();
-    if (isPlaying) {
-      audio.play().catch(() => setPlaying(false));
-    }
+
+    let cancelled = false;
+
+    const loadAndPlay = async () => {
+      setLoadingUrl(true);
+
+      // 如果 track 已有 audioUrl，直接使用
+      let url = currentTrack.audioUrl;
+
+      // 如果没有 audioUrl 且有源配置，动态获取
+      if (!url && hasActiveSource() && currentTrack.neteaseId) {
+        try {
+          url = await searchApi.getSongUrl(currentTrack.neteaseId);
+        } catch (e) {
+          console.warn('获取音频URL失败', e);
+        }
+      }
+
+      if (cancelled) return;
+      setLoadingUrl(false);
+
+      if (url) {
+        audio.src = url;
+        audio.load();
+        if (isPlaying) {
+          audio.play().catch(() => setPlaying(false));
+        }
+      } else {
+        setPlaying(false);
+      }
+    };
+
+    loadAndPlay();
+
+    return () => {
+      cancelled = true;
+    };
   }, [currentTrack, isPlaying, setPlaying]);
 
   // 音量
@@ -63,7 +97,7 @@ export default function GlobalAudio() {
         onEnded={next}
         crossOrigin="anonymous"
       />
-      <MiniPlayer />
+      <MiniPlayer loading={loadingUrl} />
     </>
   );
 }

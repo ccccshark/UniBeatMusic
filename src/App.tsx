@@ -6,6 +6,7 @@ import Recommend from '@/pages/Recommend';
 import Player from '@/pages/Player';
 import Discover from '@/pages/Discover';
 import Profile from '@/pages/Profile';
+import MusicSource from '@/pages/MusicSource';
 import GlobalAudio from '@/components/Player/GlobalAudio';
 import { useUserStore } from '@/store/userStore';
 
@@ -38,6 +39,7 @@ function AnimatedRoutes() {
       >
         <Routes location={location}>
           <Route path="/login" element={<Login />} />
+          <Route path="/music-source" element={<MusicSource />} />
           <Route
             path="/"
             element={
