@@ -16,11 +16,15 @@ interface UserState {
   user: UserProfile;
   isLoggedIn: boolean;
   likedTrackIds: string[];
+  searchHistory: string[];
   logging: boolean;
   loginType: 'mock' | 'netease' | null;
   logout: () => void;
   toggleLike: (trackId: string) => void;
   isLiked: (trackId: string) => boolean;
+  addSearchHistory: (query: string) => void;
+  getSearchHistory: () => string[];
+  clearSearchHistory: () => void;
   initGuest: () => void;
 }
 
@@ -30,6 +34,7 @@ export const useUserStore = create<UserState>()(
       user: { ...EMPTY_USER },
       isLoggedIn: true,
       likedTrackIds: [],
+      searchHistory: [],
       logging: false,
       loginType: 'mock',
 
@@ -48,6 +53,7 @@ export const useUserStore = create<UserState>()(
           user: { ...EMPTY_USER },
           isLoggedIn: true,
           likedTrackIds: [],
+          searchHistory: [],
           loginType: 'mock',
         });
       },
@@ -62,6 +68,21 @@ export const useUserStore = create<UserState>()(
       },
 
       isLiked: (trackId) => get().likedTrackIds.includes(trackId),
+
+      addSearchHistory: (query) => {
+        const history = get().searchHistory.filter(q => q !== query);
+        history.unshift(query);
+        if (history.length > 10) {
+          history.pop();
+        }
+        set({ searchHistory: history });
+      },
+
+      getSearchHistory: () => get().searchHistory,
+
+      clearSearchHistory: () => {
+        set({ searchHistory: [] });
+      },
     }),
     {
       name: 'unibeat-user',
@@ -69,6 +90,7 @@ export const useUserStore = create<UserState>()(
         user: state.user,
         isLoggedIn: state.isLoggedIn,
         likedTrackIds: state.likedTrackIds,
+        searchHistory: state.searchHistory,
         loginType: state.loginType,
       }),
     }

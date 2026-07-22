@@ -4,7 +4,6 @@ import { AnimatePresence, motion } from 'framer-motion';
 import AppLayout from '@/components/Layout/AppLayout';
 import SplashScreen from '@/components/SplashScreen';
 import TermsModal from '@/components/TermsModal';
-import Recommend from '@/pages/Recommend';
 import Player from '@/pages/Player';
 import Discover from '@/pages/Discover';
 import Profile from '@/pages/Profile';
@@ -25,7 +24,7 @@ function AnimatedRoutes() {
 
   useEffect(() => {
     const handleBackButton = () => {
-      if (location.pathname === '/') {
+      if (location.pathname === '/discover') {
         return;
       }
       navigate(-1);
@@ -49,10 +48,9 @@ function AnimatedRoutes() {
         <AppLayout>
           <Routes location={location}>
             <Route path="/music-source" element={<MusicSource />} />
-            <Route path="/" element={<Recommend />} />
             <Route path="/discover" element={<Discover />} />
             <Route path="/profile" element={<Profile />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
+            <Route path="*" element={<Navigate to="/discover" replace />} />
           </Routes>
         </AppLayout>
       )}

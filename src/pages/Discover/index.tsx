@@ -1,9 +1,10 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Loader2, Play, Search, TrendingUp, Clock, Disc, Radio, Headphones, Flame, Star, Music, X } from 'lucide-react';
+import { Loader2, Play, Search, TrendingUp, Clock, Disc, Radio, Headphones, Flame, Star, Music, X, RefreshCw } from 'lucide-react';
 import { TopBar } from '@/components/Layout/AppLayout';
 import { usePlayerStore } from '@/store/playerStore';
+import { useUserStore } from '@/store/userStore';
 import { searchApi, recommendApi, hasActiveSource } from '@/services/musicApi';
 import { getTrackTitle, getTrackArtist, getTrackCover, getTrackCoverColors, getTrackDuration } from '@/lib/trackUtils';
 import type { Track } from '@/types';
@@ -18,20 +19,21 @@ const CATEGORIES = [
   { icon: Clock, label: '历史', color: 'text-gray-400', bg: 'bg-gray-400/20' },
 ];
 
-const BANNERS = [
-  { id: 1, title: '夏日清凉歌单', desc: '30首消暑必备', color: 'from-blue-500/30 to-cyan-500/30' },
-  { id: 2, title: '华语金曲回顾', desc: '重温经典旋律', color: 'from-purple-500/30 to-pink-500/30' },
-  { id: 3, title: '电子音乐之夜', desc: '燃爆全场节奏', color: 'from-orange-500/30 to-red-500/30' },
-];
+interface DailyQuote {
+  content: string;
+  author: string;
+}
 
 export default function Discover() {
   const navigate = useNavigate();
   const { playTrack } = usePlayerStore();
+  const { searchHistory, addSearchHistory, clearSearchHistory } = useUserStore();
   const [hotTracks, setHotTracks] = useState<Track[]>([]);
+  const [recommendTracks, setRecommendTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(true);
-  const [bannerIndex, setBannerIndex] = useState(0);
+  const [quote, setQuote] = useState<DailyQuote | null>(null);
+  const [quoteLoading, setQuoteLoading] = useState(true);
 
-  // 搜索相关状态
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Track[]>([]);
   const [searching, setSearching] = useState(false);
@@ -42,7 +44,7 @@ export default function Discover() {
     let cancelled = false;
     setLoading(true);
 
-    recommendApi.getRecommendTracks(20).then((tracks) => {
+    recommendApi.getRecommendTracks(30).then((tracks) => {
       if (cancelled) return;
       setHotTracks(tracks);
       setLoading(false);
@@ -57,16 +59,66 @@ export default function Discover() {
   }, []);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setBannerIndex((prev) => (prev + 1) % BANNERS.length);
-    }, 4000);
-    return () => clearInterval(interval);
+    const fetchQuote = async () => {
+      try {
+        const res = await fetch('https://v1.hitokoto.cn/?c=a&c=b&c=c&c=d&c=e&c=f&c=g&c=h');
+        const data = await res.json();
+        setQuote({
+          content: data.hitokoto || '音乐是灵魂的语言',
+          author: data.from || '佚名',
+        });
+      } catch {
+        const quotes: DailyQuote[] = [
+          { content: '音乐是灵魂的语言', author: '贝多芬' },
+          { content: '没有音乐，生活就是一个错误', author: '尼采' },
+          { content: '音乐是心灵的迸发', author: '李斯特' },
+          { content: '音乐能激发或抚慰情怀', author: '爱因斯坦' },
+          { content: '音乐是比一切智慧、一切哲学更高的启示', author: '贝多芬' },
+          { content: '音乐是爱的食粮', author: '莎士比亚' },
+          { content: '音乐是时间的艺术', author: '德彪西' },
+          { content: '音乐是人类共同的语言', author: '塞尚' },
+          { content: '音乐是思维着的声音', author: '雨果' },
+          { content: '音乐是情感的导师', author: '卢梭' },
+        ];
+        setQuote(quotes[Math.floor(Math.random() * quotes.length)]);
+      } finally {
+        setQuoteLoading(false);
+      }
+    };
+    fetchQuote();
   }, []);
+
+  useEffect(() => {
+    if (searchHistory.length === 0) return;
+    
+    const fetchRecommendations = async () => {
+      try {
+        const keywords = searchHistory.slice(0, 3);
+        const allResults: Track[] = [];
+        
+        for (const keyword of keywords) {
+          const result = await searchApi.search(keyword, 5);
+          allResults.push(...result.tracks);
+        }
+        
+        const uniqueResults = allResults.filter(
+          (track, index, self) => index === self.findIndex(t => t.id === track.id)
+        );
+        
+        setRecommendTracks(uniqueResults.slice(0, 10));
+      } catch {
+        setRecommendTracks([]);
+      }
+    };
+    
+    fetchRecommendations();
+  }, [searchHistory]);
 
   const handleSearch = useCallback(async () => {
     const query = searchQuery.trim();
     if (!query) return;
 
+    addSearchHistory(query);
     setSearching(true);
     setHasSearched(true);
     try {
@@ -78,7 +130,7 @@ export default function Discover() {
     } finally {
       setSearching(false);
     }
-  }, [searchQuery]);
+  }, [searchQuery, addSearchHistory]);
 
   const handleClearSearch = () => {
     setSearchQuery('');
@@ -98,6 +150,27 @@ export default function Discover() {
   };
 
   const sourceActive = hasActiveSource();
+
+  const refreshQuote = () => {
+    setQuoteLoading(true);
+    fetch('https://v1.hitokoto.cn/?c=a&c=b&c=c&c=d&c=e&c=f&c=g&c=h')
+      .then(res => res.json())
+      .then(data => {
+        setQuote({
+          content: data.hitokoto || '音乐是灵魂的语言',
+          author: data.from || '佚名',
+        });
+      })
+      .catch(() => {
+        const quotes: DailyQuote[] = [
+          { content: '音乐是灵魂的语言', author: '贝多芬' },
+          { content: '没有音乐，生活就是一个错误', author: '尼采' },
+          { content: '音乐是心灵的迸发', author: '李斯特' },
+        ];
+        setQuote(quotes[Math.floor(Math.random() * quotes.length)]);
+      })
+      .finally(() => setQuoteLoading(false));
+  };
 
   return (
     <div>
@@ -138,6 +211,31 @@ export default function Discover() {
             </button>
           )}
         </div>
+
+        {showSearch && !hasSearched && searchHistory.length > 0 && (
+          <div className="mt-3">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs text-white/50">搜索历史</span>
+              <button onClick={clearSearchHistory} className="text-xs text-white/30 hover:text-white/50">
+                清空
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {searchHistory.slice(0, 6).map((query) => (
+                <button
+                  key={query}
+                  onClick={() => {
+                    setSearchQuery(query);
+                    handleSearch();
+                  }}
+                  className="px-3 py-1.5 rounded-full bg-white/8 text-white/70 text-xs hover:bg-white/15"
+                >
+                  {query}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 搜索结果 */}
@@ -206,36 +304,27 @@ export default function Discover() {
         </div>
       ) : (
         <>
-          {/* 轮播 Banner */}
+          {/* 每日一言 Banner */}
           <div className="px-4 mb-4">
-            <div className="relative h-32 rounded-2xl overflow-hidden">
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={bannerIndex}
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.3 }}
-                  className={`absolute inset-0 bg-gradient-to-br ${BANNERS[bannerIndex].color} flex items-end p-4`}
-                >
-                  <div>
-                    <h3 className="text-lg font-bold text-white">{BANNERS[bannerIndex].title}</h3>
-                    <p className="text-sm text-white/70">{BANNERS[bannerIndex].desc}</p>
-                  </div>
-                </motion.div>
-              </AnimatePresence>
-              <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
-                {BANNERS.map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setBannerIndex(index)}
-                    className={cn(
-                      'w-1.5 h-1.5 rounded-full transition-all',
-                      index === bannerIndex ? 'bg-white w-4' : 'bg-white/40'
-                    )}
-                  />
-                ))}
+            <div className="relative h-32 rounded-2xl overflow-hidden bg-gradient-to-br from-salt-primary/30 via-purple-500/20 to-salt-accent/30">
+              <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
+                {quoteLoading ? (
+                  <Loader2 className="w-6 h-6 animate-spin text-white/60" />
+                ) : quote ? (
+                  <>
+                    <p className="text-lg font-medium text-white leading-relaxed mb-2">
+                      "{quote.content}"
+                    </p>
+                    <p className="text-xs text-white/60">— {quote.author}</p>
+                  </>
+                ) : null}
               </div>
+              <button
+                onClick={refreshQuote}
+                className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/60 hover:text-white hover:bg-white/20"
+              >
+                <RefreshCw className="w-4 h-4" />
+              </button>
             </div>
           </div>
 
@@ -394,22 +483,23 @@ export default function Discover() {
               </div>
             </div>
 
-            {/* 猜你喜欢 */}
+            {/* 猜你喜欢 - 基于搜索历史 */}
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <Star className="w-5 h-5 text-purple-400" />
                 <h2 className="text-lg font-bold text-white">猜你喜欢</h2>
               </div>
 
-              {loading ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="w-5 h-5 animate-spin text-white/55" />
+              {searchHistory.length === 0 ? (
+                <div className="text-center py-8 text-white/40 text-sm">
+                  <Star className="w-8 h-8 mx-auto mb-2 text-white/20" />
+                  搜索歌曲后为您推荐
                 </div>
-              ) : hotTracks.length === 0 ? (
-                <div className="text-center py-8 text-white/40 text-sm">暂无数据</div>
+              ) : recommendTracks.length === 0 ? (
+                <div className="text-center py-8 text-white/40 text-sm">暂无推荐</div>
               ) : (
                 <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2">
-                  {hotTracks.slice(4, 10).map((track) => (
+                  {recommendTracks.map((track) => (
                     <div
                       key={track.id}
                       className="flex-shrink-0 w-24 cursor-pointer active:scale-95 transition-transform"

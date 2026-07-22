@@ -15,7 +15,6 @@ import {
   ListMusic,
   Volume2,
   VolumeX,
-  Headphones,
   Music,
   X,
 } from 'lucide-react';
@@ -56,6 +55,7 @@ export default function Player() {
   const [track, setTrack] = useState<Track | null>(currentTrack);
   const [view, setView] = useState<'disc' | 'lyric'>('disc');
   const [showQueue, setShowQueue] = useState(false);
+  const [showVolume, setShowVolume] = useState(false);
 
   useEffect(() => {
     if (!trackId) return;
@@ -63,7 +63,6 @@ export default function Player() {
       setTrack(currentTrack);
       return;
     }
-    // 如果没有匹配的歌曲，使用当前播放列表中的第一首
     if (playlist.length > 0) {
       const found = playlist.find((t) => t.id === trackId);
       if (found) {
@@ -77,8 +76,8 @@ export default function Player() {
   if (!displayTrack) {
     return (
       <div className="min-h-screen bg-salt-bg flex items-center justify-center text-white/55">
-        <button onClick={() => navigate('/')} className="underline text-salt-primary">
-          返回推荐流
+        <button onClick={() => navigate('/discover')} className="underline text-salt-primary">
+          返回发现页
         </button>
       </div>
     );
@@ -115,8 +114,8 @@ export default function Player() {
     <div className="relative min-h-screen bg-salt-bg overflow-hidden">
       <PlayerBackground colors={coverColors} />
 
-      {/* 顶部栏 - 椒盐风格简洁 */}
-      <header className="relative z-20 flex items-center justify-between px-5 py-4">
+      {/* 顶部栏 */}
+      <header className="relative z-20 flex items-center justify-between px-5 py-4" style={{ paddingTop: 'calc(1rem + env(safe-area-inset-top))' }}>
         <button
           onClick={() => navigate(-1)}
           className="w-10 h-10 rounded-full glass flex items-center justify-center text-white/85 hover:text-white transition-colors"
@@ -124,9 +123,7 @@ export default function Player() {
           <ChevronDown className="w-5 h-5" />
         </button>
         <div className="text-center">
-          <p className="text-[10px] text-white/45 tracking-wider uppercase">
-            正在播放
-          </p>
+          <p className="text-[10px] text-white/45 tracking-wider uppercase">正在播放</p>
           <p className="text-sm font-semibold text-white truncate max-w-[200px]">
             {trackTitle}
           </p>
@@ -139,9 +136,9 @@ export default function Player() {
         </button>
       </header>
 
-      {/* 主区域 */}
+      {/* 主区域 - 网易云风格 */}
       <div className="relative z-10 px-6 pt-4 pb-40 max-w-2xl mx-auto">
-        {/* 视图切换 - 椒盐风格胶囊 */}
+        {/* 视图切换 */}
         <div className="flex justify-center mb-6">
           <div className="flex gap-1 p-1 rounded-full glass">
             <button
@@ -201,11 +198,11 @@ export default function Player() {
                 </div>
               </div>
 
-              {/* 频谱可视化 - 椒盐风格 */}
+              {/* 频谱可视化 */}
               <div className="w-full mt-2 surface rounded-2xl p-3">
                 <div className="flex items-center justify-between mb-1.5">
                   <span className="text-[10px] text-white/55 flex items-center gap-1">
-                    <Headphones className="w-3 h-3" />
+                    <Music className="w-3 h-3" />
                     频谱可视化
                   </span>
                   <span className="text-[10px] text-white/45 font-mono">
@@ -251,7 +248,7 @@ export default function Player() {
         </AnimatePresence>
       </div>
 
-      {/* 底部控制台 - 椒盐风格 */}
+      {/* 底部控制台 - 网易云风格 */}
       <div className="fixed bottom-0 left-0 right-0 z-30">
         {/* 进度条 */}
         <div className="px-6 mb-2 max-w-2xl mx-auto w-full">
@@ -366,7 +363,7 @@ export default function Player() {
         </div>
       </div>
 
-      {/* 播放队列抽屉 - 椒盐风格 */}
+      {/* 播放队列抽屉 */}
       <AnimatePresence>
         {showQueue && (
           <>

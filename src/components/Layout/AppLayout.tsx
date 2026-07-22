@@ -1,10 +1,9 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Home, Compass, User, Music2 } from 'lucide-react';
+import { Compass, User, Music2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
 const TABS = [
-  { path: '/', label: '首页', icon: Home },
   { path: '/discover', label: '发现', icon: Compass },
   { path: '/profile', label: '我的', icon: User },
 ];
@@ -27,7 +26,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
       {/* 底部导航栏 */}
       <nav className="relative z-30 glass-strong border-t border-white/[0.06] shrink-0 pb-[env(safe-area-inset-bottom)]">
-        <div className="max-w-2xl mx-auto grid grid-cols-3 px-4 py-1.5">
+        <div className="max-w-2xl mx-auto grid grid-cols-2 px-4 py-1.5">
           {TABS.map((tab) => {
             const Icon = tab.icon;
             const active = location.pathname === tab.path;

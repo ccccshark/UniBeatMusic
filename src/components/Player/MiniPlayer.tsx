@@ -1,11 +1,9 @@
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Pause, SkipForward, ChevronUp, Loader2 } from 'lucide-react';
+import { Play, Pause, SkipForward, ChevronUp, Loader2, Music } from 'lucide-react';
 import { usePlayerStore } from '@/store/playerStore';
-import CoverArt from '@/components/CoverArt';
-import PlatformBadge from '@/components/PlatformBadge';
-import { formatDuration } from '@/lib/format';
 import { getTrackTitle, getTrackArtist, getTrackCoverColors } from '@/lib/trackUtils';
+import { cn } from '@/lib/utils';
 
 interface MiniPlayerProps {
   loading?: boolean;
@@ -52,20 +50,43 @@ export default function MiniPlayer({ loading = false }: MiniPlayerProps) {
           </div>
 
           <div className="flex items-center gap-3 p-2.5">
-            {/* 封面 */}
+            {/* 播放图标 - 不再显示封面 */}
             <button
               onClick={openFullPlayer}
-              className="relative shrink-0 group"
+              className="relative shrink-0"
             >
-              <CoverArt
-                colors={coverColors}
-                title={title}
-                size="md"
-                className={isPlaying ? 'animate-spin-slow' : ''}
-                shape="square"
-              />
-              <div className="absolute inset-0 rounded-lg bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                <ChevronUp className="w-5 h-5 text-white" />
+              <div
+                className="w-12 h-12 rounded-lg flex items-center justify-center"
+                style={{ backgroundColor: coverColors.from + '40' }}
+              >
+                {isPlaying ? (
+                  <motion.div
+                    animate={{ scale: [1, 1.05, 1] }}
+                    transition={{ duration: 1, repeat: Infinity }}
+                    className="flex items-center gap-0.5"
+                  >
+                    <motion.div
+                      animate={{ height: ['60%', '100%', '60%'] }}
+                      transition={{ duration: 0.5, repeat: Infinity }}
+                      className="w-1 bg-salt-primary rounded-full"
+                      style={{ height: '60%' }}
+                    />
+                    <motion.div
+                      animate={{ height: ['80%', '40%', '80%'] }}
+                      transition={{ duration: 0.4, repeat: Infinity }}
+                      className="w-1 bg-salt-primary rounded-full"
+                      style={{ height: '80%' }}
+                    />
+                    <motion.div
+                      animate={{ height: ['40%', '90%', '40%'] }}
+                      transition={{ duration: 0.6, repeat: Infinity }}
+                      className="w-1 bg-salt-primary rounded-full"
+                      style={{ height: '40%' }}
+                    />
+                  </motion.div>
+                ) : (
+                  <Music className="w-5 h-5 text-white/70" />
+                )}
               </div>
             </button>
 
@@ -74,12 +95,9 @@ export default function MiniPlayer({ loading = false }: MiniPlayerProps) {
               onClick={openFullPlayer}
               className="flex-1 min-w-0 text-left"
             >
-              <div className="flex items-center gap-1.5">
-                <p className="text-sm font-semibold text-white truncate">{title}</p>
-                <PlatformBadge platform={currentTrack.platform} size="xs" />
-              </div>
+              <p className="text-sm font-semibold text-white truncate">{title}</p>
               <p className="text-xs text-white/60 truncate">
-                {artist} · {formatDuration(currentTime)} / {formatDuration(duration)}
+                {artist} · {Math.floor(currentTime / 60)}:{Math.floor(currentTime % 60).toString().padStart(2, '0')} / {Math.floor(duration / 60)}:{Math.floor(duration % 60).toString().padStart(2, '0')}
               </p>
             </button>
 
