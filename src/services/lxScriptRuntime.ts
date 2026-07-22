@@ -343,6 +343,30 @@ export class LxScriptRuntime {
     throw new Error(`Invalid musicUrl response: ${JSON.stringify(result).slice(0, 200)}`);
   }
 
+  // 搜索歌曲
+  async search(
+    source: LxPlatform,
+    keyword: string
+  ): Promise<any[]> {
+    if (!this.loaded || !this.triggerInternal) {
+      throw new Error('Script not loaded');
+    }
+
+    const result = await this.triggerInternal(EVENT_NAMES.request, {
+      source,
+      action: 'search',
+      info: {
+        keyword,
+      },
+    });
+
+    if (Array.isArray(result)) return result;
+    if (result && Array.isArray(result.data)) return result.data;
+    if (result && Array.isArray(result.songs)) return result.songs;
+
+    throw new Error(`Invalid search response: ${JSON.stringify(result).slice(0, 200)}`);
+  }
+
   // 获取歌词
   async getMusicLyric(
     source: LxPlatform,

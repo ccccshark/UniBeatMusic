@@ -11,12 +11,12 @@ import type { Track } from '@/types';
 import { cn } from '@/lib/utils';
 
 const CATEGORIES = [
-  { icon: Flame, label: '热歌榜', color: 'text-red-400', bg: 'bg-red-400/20' },
-  { icon: Star, label: '飙升榜', color: 'text-orange-400', bg: 'bg-orange-400/20' },
-  { icon: Disc, label: '新歌榜', color: 'text-blue-400', bg: 'bg-blue-400/20' },
-  { icon: Radio, label: '电台', color: 'text-purple-400', bg: 'bg-purple-400/20' },
-  { icon: Headphones, label: '歌单', color: 'text-green-400', bg: 'bg-green-400/20' },
-  { icon: Clock, label: '历史', color: 'text-gray-400', bg: 'bg-gray-400/20' },
+  { id: 'hot', icon: Flame, label: '热歌榜', color: 'text-red-400', bg: 'bg-red-400/20', playListId: '3778678' },
+  { id: 'rise', icon: Star, label: '飙升榜', color: 'text-orange-400', bg: 'bg-orange-400/20', playListId: '19723756' },
+  { id: 'new', icon: Disc, label: '新歌榜', color: 'text-blue-400', bg: 'bg-blue-400/20', playListId: '2884035' },
+  { id: 'radio', icon: Radio, label: '电台', color: 'text-purple-400', bg: 'bg-purple-400/20', playListId: '' },
+  { id: 'playlist', icon: Headphones, label: '歌单', color: 'text-green-400', bg: 'bg-green-400/20', playListId: '' },
+  { id: 'history', icon: Clock, label: '历史', color: 'text-gray-400', bg: 'bg-gray-400/20', playListId: '' },
 ];
 
 interface DailyQuote {
@@ -39,6 +39,10 @@ export default function Discover() {
   const [searching, setSearching] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [categoryTracks, setCategoryTracks] = useState<Track[]>([]);
+  const [categoryLoading, setCategoryLoading] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -113,6 +117,38 @@ export default function Discover() {
     
     fetchRecommendations();
   }, [searchHistory]);
+
+  const handleCategoryClick = async (category: typeof CATEGORIES[0]) => {
+    if (category.id === 'history') {
+      return;
+    }
+
+    setActiveCategory(category.id);
+    setCategoryLoading(true);
+
+    try {
+      if (category.playListId) {
+        const detail = await recommendApi.getPlaylistDetail(category.playListId);
+        setCategoryTracks(detail?.tracks || []);
+      } else if (category.id === 'radio') {
+        const tracks = await recommendApi.getNewSongs();
+        setCategoryTracks(tracks);
+      } else if (category.id === 'playlist') {
+        const playlists = await recommendApi.getRecommendPlaylists(5);
+        const allTracks: Track[] = [];
+        for (const pl of playlists) {
+          const detail = await recommendApi.getPlaylistDetail(pl.id);
+          allTracks.push(...(detail?.tracks || []));
+        }
+        setCategoryTracks(allTracks.slice(0, 20));
+      }
+    } catch (e) {
+      console.error('获取分类数据失败:', e);
+      setCategoryTracks([]);
+    } finally {
+      setCategoryLoading(false);
+    }
+  };
 
   const handleSearch = useCallback(async () => {
     const query = searchQuery.trim();
@@ -333,18 +369,30 @@ export default function Discover() {
             <div className="grid grid-cols-6 gap-3">
               {CATEGORIES.map((cat, index) => {
                 const Icon = cat.icon;
+                const isActive = activeCategory === cat.id;
                 return (
                   <motion.button
-                    key={cat.label}
+                    key={cat.id}
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: index * 0.05 }}
-                    className="flex flex-col items-center gap-2 active:scale-95 transition-transform"
+                    onClick={() => handleCategoryClick(cat)}
+                    className={cn(
+                      'flex flex-col items-center gap-2 active:scale-95 transition-transform',
+                      isActive && 'opacity-100',
+                      !isActive && 'opacity-80'
+                    )}
                   >
-                    <div className={cn('w-12 h-12 rounded-2xl flex items-center justify-center', cat.bg)}>
+                    <div className={cn(
+                      'w-12 h-12 rounded-2xl flex items-center justify-center transition-all',
+                      cat.bg,
+                      isActive && 'ring-2 ring-salt-primary ring-opacity-50'
+                    )}>
                       <Icon className={cn('w-6 h-6', cat.color)} />
                     </div>
-                    <span className="text-xs text-white/70">{cat.label}</span>
+                    <span className={cn('text-xs transition-colors', isActive ? 'text-white font-medium' : 'text-white/70')}>
+                      {cat.label}
+                    </span>
                   </motion.button>
                 );
               })}
@@ -352,40 +400,41 @@ export default function Discover() {
           </div>
 
           <div className="px-4 pb-32 space-y-6">
-            {/* 排行榜入口 */}
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <Disc className="w-5 h-5 text-salt-accent" />
-                  <h2 className="text-lg font-bold text-white">排行榜</h2>
+            {activeCategory ? (
+              <>
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="text-lg font-bold text-white">
+                    {CATEGORIES.find(c => c.id === activeCategory)?.label}
+                  </h2>
+                  <button
+                    onClick={() => {
+                      setActiveCategory(null);
+                      setCategoryTracks([]);
+                    }}
+                    className="text-sm text-white/50 hover:text-white/80"
+                  >
+                    返回
+                  </button>
                 </div>
-              </div>
 
-              <div className="rounded-2xl glass-strong p-4">
-                {loading ? (
-                  <div className="flex items-center justify-center py-8">
-                    <Loader2 className="w-5 h-5 animate-spin text-white/55" />
+                {categoryLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="w-6 h-6 animate-spin text-salt-primary" />
                   </div>
-                ) : hotTracks.length === 0 ? (
-                  <div className="text-center py-8 text-white/40 text-sm">暂无数据</div>
+                ) : categoryTracks.length === 0 ? (
+                  <div className="text-center py-12 text-white/40 text-sm">
+                    <Music className="w-12 h-12 mx-auto mb-3 text-white/20" />
+                    暂无数据
+                  </div>
                 ) : (
-                  <div className="space-y-3">
-                    {hotTracks.slice(0, 3).map((track, index) => (
+                  <div className="space-y-2">
+                    {categoryTracks.slice(0, 50).map((track) => (
                       <div
                         key={track.id}
-                        className="flex items-center gap-3 cursor-pointer active:opacity-70 transition-opacity"
-                        onClick={() => handlePlayTrack(track)}
+                        className="flex items-center gap-3 p-3 rounded-xl glass hover:bg-white/5 cursor-pointer active:scale-[0.98] transition-transform"
+                        onClick={() => handlePlayTrack(track, categoryTracks)}
                       >
-                        <span className={cn(
-                          'w-6 h-6 rounded-lg flex items-center justify-center text-sm font-bold shrink-0',
-                          index === 0 ? 'bg-yellow-500 text-black' :
-                          index === 1 ? 'bg-gray-400 text-black' :
-                          index === 2 ? 'bg-orange-600 text-white' :
-                          'text-white/50'
-                        )}>
-                          {index + 1}
-                        </span>
-                        <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0">
+                        <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0">
                           {getTrackCover(track) ? (
                             <img src={getTrackCover(track)} alt="" className="w-full h-full object-cover" />
                           ) : (
@@ -396,71 +445,137 @@ export default function Discover() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <h4 className="text-sm font-medium text-white truncate">{getTrackTitle(track)}</h4>
-                          <p className="text-xs text-white/50 truncate">{getTrackArtist(track)}</p>
+                          <p className="text-xs text-white/50 truncate">
+                            {getTrackArtist(track)} · {formatDuration(getTrackDuration(track))}
+                          </p>
                         </div>
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            handlePlayTrack(track);
+                            handlePlayTrack(track, categoryTracks);
                           }}
-                          className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center shrink-0"
+                          className="w-9 h-9 rounded-full bg-salt-primary/20 flex items-center justify-center shrink-0"
                         >
-                          <Play className="w-4 h-4 text-white ml-0.5" />
+                          <Play className="w-4 h-4 text-salt-primary ml-0.5" />
                         </button>
                       </div>
                     ))}
                   </div>
                 )}
-              </div>
-            </div>
-
-            {/* 猜你喜欢 - 基于搜索历史 */}
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <Star className="w-5 h-5 text-purple-400" />
-                <h2 className="text-lg font-bold text-white">猜你喜欢</h2>
-              </div>
-
-              {searchHistory.length === 0 ? (
-                <div className="text-center py-8 text-white/40 text-sm">
-                  <Star className="w-8 h-8 mx-auto mb-2 text-white/20" />
-                  搜索歌曲后为您推荐
-                </div>
-              ) : recommendTracks.length === 0 ? (
-                <div className="text-center py-8 text-white/40 text-sm">暂无推荐</div>
-              ) : (
-                <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2">
-                  {recommendTracks.map((track) => (
-                    <div
-                      key={track.id}
-                      className="flex-shrink-0 w-24 cursor-pointer active:scale-95 transition-transform"
-                      onClick={() => handlePlayTrack(track)}
-                    >
-                      <div className="relative rounded-xl overflow-hidden mb-2">
-                        <div
-                          className="aspect-square w-full"
-                          style={{ backgroundColor: getTrackCoverColors(track).from }}
-                        >
-                          {getTrackCover(track) ? (
-                            <img src={getTrackCover(track)} alt="" className="w-full h-full object-cover" />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                              <Music className="w-6 h-6 text-white/30" />
-                            </div>
-                          )}
-                        </div>
-                        <div className="absolute inset-0 bg-black/30" />
-                        <div className="absolute bottom-1 right-1 w-6 h-6 rounded-full bg-salt-primary flex items-center justify-center">
-                          <Play className="w-3 h-3 text-white ml-0.5" />
-                        </div>
-                      </div>
-                      <p className="text-xs text-white/70 truncate">{getTrackTitle(track)}</p>
-                      <p className="text-[10px] text-white/40 truncate">{getTrackArtist(track)}</p>
+              </>
+            ) : (
+              <>
+                {/* 排行榜入口 */}
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <Disc className="w-5 h-5 text-salt-accent" />
+                      <h2 className="text-lg font-bold text-white">排行榜</h2>
                     </div>
-                  ))}
+                  </div>
+
+                  <div className="rounded-2xl glass-strong p-4">
+                    {loading ? (
+                      <div className="flex items-center justify-center py-8">
+                        <Loader2 className="w-5 h-5 animate-spin text-white/55" />
+                      </div>
+                    ) : hotTracks.length === 0 ? (
+                      <div className="text-center py-8 text-white/40 text-sm">暂无数据</div>
+                    ) : (
+                      <div className="space-y-3">
+                        {hotTracks.slice(0, 3).map((track, index) => (
+                          <div
+                            key={track.id}
+                            className="flex items-center gap-3 cursor-pointer active:opacity-70 transition-opacity"
+                            onClick={() => handlePlayTrack(track)}
+                          >
+                            <span className={cn(
+                              'w-6 h-6 rounded-lg flex items-center justify-center text-sm font-bold shrink-0',
+                              index === 0 ? 'bg-yellow-500 text-black' :
+                              index === 1 ? 'bg-gray-400 text-black' :
+                              index === 2 ? 'bg-orange-600 text-white' :
+                              'text-white/50'
+                            )}>
+                              {index + 1}
+                            </span>
+                            <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0">
+                              {getTrackCover(track) ? (
+                                <img src={getTrackCover(track)} alt="" className="w-full h-full object-cover" />
+                              ) : (
+                                <div className="w-full h-full bg-white/10 flex items-center justify-center">
+                                  <Music className="w-5 h-5 text-white/40" />
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h4 className="text-sm font-medium text-white truncate">{getTrackTitle(track)}</h4>
+                              <p className="text-xs text-white/50 truncate">{getTrackArtist(track)}</p>
+                            </div>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handlePlayTrack(track);
+                              }}
+                              className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center shrink-0"
+                            >
+                              <Play className="w-4 h-4 text-white ml-0.5" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              )}
-            </div>
+
+                {/* 猜你喜欢 - 基于搜索历史 */}
+                <div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <Star className="w-5 h-5 text-purple-400" />
+                    <h2 className="text-lg font-bold text-white">猜你喜欢</h2>
+                  </div>
+
+                  {searchHistory.length === 0 ? (
+                    <div className="text-center py-8 text-white/40 text-sm">
+                      <Star className="w-8 h-8 mx-auto mb-2 text-white/20" />
+                      搜索歌曲后为您推荐
+                    </div>
+                  ) : recommendTracks.length === 0 ? (
+                    <div className="text-center py-8 text-white/40 text-sm">暂无推荐</div>
+                  ) : (
+                    <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2">
+                      {recommendTracks.map((track) => (
+                        <div
+                          key={track.id}
+                          className="flex-shrink-0 w-24 cursor-pointer active:scale-95 transition-transform"
+                          onClick={() => handlePlayTrack(track)}
+                        >
+                          <div className="relative rounded-xl overflow-hidden mb-2">
+                            <div
+                              className="aspect-square w-full"
+                              style={{ backgroundColor: getTrackCoverColors(track).from }}
+                            >
+                              {getTrackCover(track) ? (
+                                <img src={getTrackCover(track)} alt="" className="w-full h-full object-cover" />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center">
+                                  <Music className="w-6 h-6 text-white/30" />
+                                </div>
+                              )}
+                            </div>
+                            <div className="absolute inset-0 bg-black/30" />
+                            <div className="absolute bottom-1 right-1 w-6 h-6 rounded-full bg-salt-primary flex items-center justify-center">
+                              <Play className="w-3 h-3 text-white ml-0.5" />
+                            </div>
+                          </div>
+                          <p className="text-xs text-white/70 truncate">{getTrackTitle(track)}</p>
+                          <p className="text-[10px] text-white/40 truncate">{getTrackArtist(track)}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
           </div>
         </>
       )}

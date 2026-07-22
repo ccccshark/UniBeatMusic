@@ -128,7 +128,24 @@ export interface LxMusicInfo {
   [key: string]: any;
 }
 
-// ==================== 用户 ====================
+// ==================== Capacitor 类型 ====================
+interface CapacitorApp {
+  exitApp(): void;
+}
+
+interface CapacitorPlugins {
+  App?: CapacitorApp;
+}
+
+interface Capacitor {
+  Plugins?: CapacitorPlugins;
+}
+
+declare global {
+  interface Window {
+    Capacitor?: Capacitor;
+  }
+}
 export interface UserProfile {
   id: string;
   nickname: string;

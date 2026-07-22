@@ -1,3 +1,4 @@
+import { useState, useEffect, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Compass, User, Music2 } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -11,10 +12,67 @@ const TABS = [
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
+  const [lastBackTime, setLastBackTime] = useState(0);
+  const [showExitToast, setShowExitToast] = useState(false);
+
+  const showToast = useCallback((message: string) => {
+    setShowExitToast(true);
+    setTimeout(() => setShowExitToast(false), 2000);
+  }, []);
+
+  const handleBack = useCallback(() => {
+    const now = Date.now();
+    
+    if (location.pathname === '/discover') {
+      if (now - lastBackTime < 2000) {
+        if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App) {
+          window.Capacitor.Plugins.App.exitApp();
+        } else {
+          window.close();
+        }
+      } else {
+        setLastBackTime(now);
+        showToast('再按一次退出应用');
+      }
+    } else {
+      navigate(-1);
+    }
+  }, [location.pathname, navigate, lastBackTime, showToast]);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      handleBack();
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [handleBack]);
+
+  useEffect(() => {
+    const handleAndroidBack = (e: Event) => {
+      e.preventDefault();
+      handleBack();
+    };
+
+    document.addEventListener('backbutton', handleAndroidBack, false);
+    
+    return () => {
+      document.removeEventListener('backbutton', handleAndroidBack, false);
+    };
+  }, [handleBack]);
 
   return (
     <div className="fixed inset-0 bg-salt-bg text-white flex flex-col overflow-hidden">
       <div className="absolute inset-0 grid-bg opacity-50 pointer-events-none" />
+
+      {/* 状态栏占位 */}
+      <div 
+        className="relative z-0 shrink-0"
+        style={{ height: 'env(safe-area-inset-top)' }}
+      />
 
       {/* 内容滚动区 - 留出底部导航栏高度 */}
       <div
@@ -53,6 +111,18 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           })}
         </div>
       </nav>
+
+      {/* 退出提示 Toast */}
+      {showExitToast && (
+        <motion.div
+          initial={{ opacity: 0, y: 50 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 50 }}
+          className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-full bg-white/10 backdrop-blur-md border border-white/10 text-white/80 text-sm"
+        >
+          再按一次退出应用
+        </motion.div>
+      )}
     </div>
   );
 }
@@ -69,7 +139,6 @@ export function TopBar({
   return (
     <header
       className="sticky top-0 z-20 glass-strong border-b border-white/[0.04]"
-      style={{ paddingTop: 'env(safe-area-inset-top)' }}
     >
       <div className="flex items-center justify-between px-5 py-3">
         <div className="flex items-center gap-2.5">

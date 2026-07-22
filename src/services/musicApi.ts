@@ -143,6 +143,60 @@ async function scriptGetMusicUrl(
   }
 }
 
+async function scriptSearch(keyword: string): Promise<SearchResult> {
+  const runtime = await getOrCreateRuntime();
+  if (!runtime) return { tracks: [], albums: [], artists: [] };
+
+  const state = useMusicSourceStore.getState();
+  const source = state.getActiveSource();
+  if (!source || !source.scriptMeta || source.scriptMeta.sources.length === 0) {
+    return { tracks: [], albums: [], artists: [] };
+  }
+
+  const platform = source.scriptMeta.sources[0];
+
+  try {
+    const results = await runtime.search(platform, keyword);
+    
+    if (!results || results.length === 0) {
+      return { tracks: [], albums: [], artists: [] };
+    }
+
+    const tracks: Track[] = results.map((item: any) => {
+      const songId = item.id || item.songmid || item.songId || '';
+      const artistName = Array.isArray(item.singers) 
+        ? item.singers.map((s: any) => s.name).join(' / ')
+        : item.singerName || item.singer || '';
+      const albumName = item.albumName || item.album || '';
+      const cover = item.img || item.cover || item.pic || null;
+      const duration = item.interval || item.duration || 0;
+
+      return {
+        id: String(songId),
+        sourceId: String(songId),
+        platform: platform,
+        name: item.name || item.songName || '',
+        artists: artistName 
+          ? [{ id: '', name: artistName, avatar: null }] 
+          : [],
+        album: albumName 
+          ? { id: '', name: albumName, cover }
+          : null,
+        cover,
+        duration: typeof duration === 'number' ? duration : 0,
+        url: null,
+        audioUrl: null,
+        lyrics: null,
+      };
+    });
+
+    return { tracks, albums: [], artists: [] };
+  } catch (e) {
+    console.error('[musicApi] 脚本搜索失败:', e);
+    return { tracks: [], albums: [], artists: [] };
+  }
+}
+
 async function neteaseSearch(keyword: string, limit = 30): Promise<SearchResult> {
   try {
     const data = await proxiedFetchJson<any>(
@@ -334,6 +388,13 @@ async function neteasePlaylistDetail(playlistId: string) {
 
 export const searchApi = {
   async search(keyword: string, limit = 30): Promise<SearchResult> {
+    if (hasActiveSource()) {
+      const scriptResult = await scriptSearch(keyword);
+      if (scriptResult.tracks.length > 0) {
+        return scriptResult;
+      }
+    }
+
     return neteaseSearch(keyword, limit);
   },
 
