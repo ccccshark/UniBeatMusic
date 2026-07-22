@@ -14,15 +14,20 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
 
   return (
-    <div className="fixed inset-0 bg-salt-bg text-white flex flex-col">
+    <div className="fixed inset-0 bg-salt-bg text-white flex flex-col overflow-hidden">
       <div className="absolute inset-0 grid-bg opacity-50 pointer-events-none" />
 
-      <div className="relative z-10 flex-1 overflow-y-auto overflow-x-hidden pt-[env(safe-area-inset-top)]">
+      {/* 内容滚动区 - 留出底部导航栏高度 */}
+      <div
+        className="relative z-10 flex-1 overflow-y-auto overflow-x-hidden"
+        style={{ paddingBottom: 'calc(56px + env(safe-area-inset-bottom))' }}
+      >
         {children}
       </div>
 
-      <nav className="relative z-50 glass-strong border-t border-white/[0.06] pb-[env(safe-area-inset-bottom)]">
-        <div className="max-w-2xl mx-auto grid grid-cols-3 px-4 py-2">
+      {/* 底部导航栏 */}
+      <nav className="relative z-30 glass-strong border-t border-white/[0.06] shrink-0 pb-[env(safe-area-inset-bottom)]">
+        <div className="max-w-2xl mx-auto grid grid-cols-3 px-4 py-1.5">
           {TABS.map((tab) => {
             const Icon = tab.icon;
             const active = location.pathname === tab.path;
@@ -63,18 +68,21 @@ export function TopBar({
   right?: React.ReactNode;
 }) {
   return (
-    <header className="sticky top-0 z-30 glass-strong border-b border-white/[0.04]">
-      <div className="flex items-center justify-between px-5 py-3.5">
+    <header
+      className="sticky top-0 z-20 glass-strong border-b border-white/[0.04]"
+      style={{ paddingTop: 'env(safe-area-inset-top)' }}
+    >
+      <div className="flex items-center justify-between px-5 py-3">
         <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl bg-gradient-flow flex items-center justify-center shadow-md">
+          <div className="w-9 h-9 rounded-xl bg-gradient-flow flex items-center justify-center shadow-md shrink-0">
             <Music2 className="w-5 h-5 text-white" />
           </div>
-          <div>
-            <h1 className="text-base font-bold tracking-wide text-white">{title}</h1>
-            {subtitle && <p className="text-[10px] text-white/45 -mt-0.5">{subtitle}</p>}
+          <div className="min-w-0">
+            <h1 className="text-base font-bold tracking-wide text-white truncate">{title}</h1>
+            {subtitle && <p className="text-[10px] text-white/45 -mt-0.5 truncate">{subtitle}</p>}
           </div>
         </div>
-        {right}
+        {right && <div className="shrink-0">{right}</div>}
       </div>
     </header>
   );

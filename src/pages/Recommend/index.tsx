@@ -1,10 +1,10 @@
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Loader2, Music, Sparkles, TrendingUp, Clock, Play, SkipForward } from 'lucide-react';
 import { TopBar } from '@/components/Layout/AppLayout';
 import RecommendCard from '@/components/TrackCard/RecommendCard';
-import { recommendApi } from '@/services/musicApi';
+import { recommendApi, hasActiveSource } from '@/services/musicApi';
 import { usePlayerStore } from '@/store/playerStore';
 import { getTrackTitle, getTrackArtist, getTrackCover } from '@/lib/trackUtils';
 import type { Track } from '@/types';
@@ -25,9 +25,6 @@ export default function Recommend() {
       if (cancelled) return;
       setTracks(data);
       setLoading(false);
-      if (containerRef.current) {
-        containerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
-      }
     }).catch(() => {
       if (cancelled) return;
       setLoading(false);
@@ -55,6 +52,8 @@ export default function Recommend() {
     }
   };
 
+  const sourceActive = hasActiveSource();
+
   return (
     <div>
       <TopBar
@@ -71,7 +70,13 @@ export default function Recommend() {
           onClick={() => navigate(`/player/${currentTrack.id}`)}
         >
           <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 relative">
-            <img src={getTrackCover(currentTrack)} alt="" className="w-full h-full object-cover" />
+            {getTrackCover(currentTrack) ? (
+              <img src={getTrackCover(currentTrack)} alt="" className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full bg-white/10 flex items-center justify-center">
+                <Music className="w-5 h-5 text-white/40" />
+              </div>
+            )}
             {isPlaying && (
               <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
                 <motion.div
@@ -88,27 +93,21 @@ export default function Recommend() {
             <h4 className="text-sm font-medium text-white truncate">{getTrackTitle(currentTrack)}</h4>
             <p className="text-xs text-white/50 truncate">{getTrackArtist(currentTrack)}</p>
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handlePlayNext();
-              }}
-              className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-salt-primary/20"
-            >
-              <SkipForward className="w-4 h-4 text-white" />
-            </button>
-          </div>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handlePlayNext();
+            }}
+            className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center shrink-0 active:scale-90 transition-transform"
+          >
+            <SkipForward className="w-4 h-4 text-white" />
+          </button>
         </motion.div>
       )}
 
       {/* 每日推荐入口 */}
       {tracks.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mx-4 mb-6"
-        >
+        <div className="mx-4 mb-6">
           <div className="relative h-32 rounded-2xl overflow-hidden bg-gradient-to-br from-salt-primary/30 via-purple-500/20 to-salt-accent/30">
             <div className="absolute inset-0 flex flex-col items-start justify-end p-4">
               <div className="flex items-center gap-2 mb-1">
@@ -120,12 +119,12 @@ export default function Recommend() {
             </div>
             <button
               onClick={() => handlePlay(tracks[0])}
-              className="absolute bottom-4 right-4 w-10 h-10 rounded-full bg-white/10 backdrop-blur flex items-center justify-center hover:bg-white/20"
+              className="absolute bottom-4 right-4 w-11 h-11 rounded-full bg-salt-primary flex items-center justify-center shadow-lg active:scale-90 transition-transform"
             >
-              <Play className="w-5 h-5 text-white ml-0.5" />
+              <Play className="w-5 h-5 text-white ml-0.5" fill="currentColor" />
             </button>
           </div>
-        </motion.div>
+        </div>
       )}
 
       {/* 快捷功能 */}
@@ -139,28 +138,24 @@ export default function Recommend() {
           ].map((item, index) => {
             const Icon = item.icon;
             return (
-              <motion.button
+              <button
                 key={item.label}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: index * 0.05 }}
-                className="flex flex-col items-center gap-2"
+                className="flex flex-col items-center gap-2 active:scale-90 transition-transform"
               >
                 <div className={cn('w-12 h-12 rounded-2xl flex items-center justify-center', item.bg)}>
                   <Icon className={cn('w-6 h-6', item.color)} />
                 </div>
                 <span className="text-xs text-white/70">{item.label}</span>
-              </motion.button>
+              </button>
             );
           })}
         </div>
       </div>
 
       {/* 推荐歌单 */}
-      <div className="px-4 pb-32">
+      <div className="px-4 pb-32" ref={containerRef}>
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-bold text-white">推荐歌单</h2>
-          <button className="text-sm text-white/50 hover:text-white/80">查看更多</button>
         </div>
 
         {loading ? (
@@ -173,29 +168,21 @@ export default function Recommend() {
               <Music className="w-8 h-8 text-white/40" />
             </div>
             <p className="text-sm">暂无推荐内容</p>
-            <p className="text-xs text-white/40">请添加音源后重试</p>
+            <p className="text-xs text-white/40">
+              {sourceActive ? '请稍后重试' : '请先添加音源'}
+            </p>
           </div>
         ) : (
-          <AnimatePresence mode="popLayout">
-            <div className="space-y-3 max-w-2xl mx-auto">
-              {tracks.map((track, index) => (
-                <motion.div
-                  key={track.id}
-                  layout
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ type: 'spring', stiffness: 200, damping: 25, delay: index * 0.03 }}
-                >
-                  <RecommendCard
-                    track={track}
-                    onPlay={() => handlePlay(track)}
-                    onClick={() => handleOpenPlayer(track)}
-                  />
-                </motion.div>
-              ))}
-            </div>
-          </AnimatePresence>
+          <div className="space-y-3 max-w-2xl mx-auto">
+            {tracks.map((track) => (
+              <RecommendCard
+                key={track.id}
+                track={track}
+                onPlay={() => handlePlay(track)}
+                onClick={() => handleOpenPlayer(track)}
+              />
+            ))}
+          </div>
         )}
       </div>
     </div>
