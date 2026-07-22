@@ -56,7 +56,7 @@ export default function Recommend() {
   };
 
   return (
-    <div className="min-h-screen bg-salt-bg">
+    <div>
       <TopBar
         title="UniBeat"
         subtitle="音乐聚合播放器"

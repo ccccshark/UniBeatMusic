@@ -61,7 +61,7 @@ export default function Discover() {
   };
 
   return (
-    <div className="min-h-screen bg-salt-bg">
+    <div>
       <TopBar
         title="发现"
         subtitle="发现好音乐"

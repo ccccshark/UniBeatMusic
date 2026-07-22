@@ -108,15 +108,9 @@ export default function MusicSourceManager() {
   };
 
   return (
-    <div className="min-h-screen bg-salt-bg text-white relative overflow-hidden">
-      {/* 流光背景 */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[400px] rounded-full bg-salt-primary/15 blur-[120px]" />
-        <div className="absolute bottom-0 right-0 w-[400px] h-[300px] rounded-full bg-salt-accent/12 blur-[100px]" />
-      </div>
-
+    <div className="relative z-10">
       {/* 顶部栏 */}
-      <header className="relative z-10 flex items-center px-4 py-4 border-b border-white/[0.04]">
+      <header className="flex items-center px-4 py-4 border-b border-white/[0.04]">
         <button
           onClick={goBack}
           className="w-10 h-10 rounded-full glass flex items-center justify-center text-white/70 hover:text-white transition-colors"

@@ -14,15 +14,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-salt-bg text-white relative">
-      <div className="fixed inset-0 grid-bg opacity-50 pointer-events-none" />
+    <div className="fixed inset-0 bg-salt-bg text-white flex flex-col">
+      <div className="absolute inset-0 grid-bg opacity-50 pointer-events-none" />
 
-      <div className="relative z-10 pt-[env(safe-area-inset-top)] pb-[calc(60px+env(safe-area-inset-bottom))]">
+      <div className="relative z-10 flex-1 overflow-y-auto overflow-x-hidden pt-[env(safe-area-inset-top)]">
         {children}
       </div>
 
-      <nav className="fixed bottom-0 left-0 right-0 z-50 glass-strong border-t border-white/[0.06]">
-        <div className="max-w-2xl mx-auto grid grid-cols-3 px-4 py-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))]">
+      <nav className="relative z-50 glass-strong border-t border-white/[0.06] pb-[env(safe-area-inset-bottom)]">
+        <div className="max-w-2xl mx-auto grid grid-cols-3 px-4 py-2">
           {TABS.map((tab) => {
             const Icon = tab.icon;
             const active = location.pathname === tab.path;

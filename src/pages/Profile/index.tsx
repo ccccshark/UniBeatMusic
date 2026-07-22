@@ -42,7 +42,7 @@ export default function Profile() {
   ];
 
   return (
-    <div className="min-h-screen bg-salt-bg">
+    <div>
       <TopBar
         title="个人中心"
         subtitle={user.nickname}

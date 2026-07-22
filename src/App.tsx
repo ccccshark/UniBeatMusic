@@ -39,33 +39,25 @@ function AnimatedRoutes() {
   const isAboutPage = location.pathname === '/about';
 
   return (
-    <AnimatePresence mode="wait">
-      <motion.div
-        key={location.pathname}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.25 }}
-      >
-        {isPlayerPage || isAboutPage ? (
+    <div>
+      {isPlayerPage || isAboutPage ? (
+        <Routes location={location}>
+          <Route path="/player/:trackId" element={<Player />} />
+          <Route path="/about" element={<About />} />
+        </Routes>
+      ) : (
+        <AppLayout>
           <Routes location={location}>
-            <Route path="/player/:trackId" element={<Player />} />
-            <Route path="/about" element={<About />} />
+            <Route path="/music-source" element={<MusicSource />} />
+            <Route path="/" element={<Recommend />} />
+            <Route path="/discover" element={<Discover />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
-        ) : (
-          <AppLayout>
-            <Routes location={location}>
-              <Route path="/music-source" element={<MusicSource />} />
-              <Route path="/" element={<Recommend />} />
-              <Route path="/discover" element={<Discover />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </AppLayout>
-        )}
-        {!isPlayerPage && !isAboutPage && <MiniPlayer />}
-      </motion.div>
-    </AnimatePresence>
+        </AppLayout>
+      )}
+      {!isPlayerPage && !isAboutPage && <MiniPlayer />}
+    </div>
   );
 }
 
