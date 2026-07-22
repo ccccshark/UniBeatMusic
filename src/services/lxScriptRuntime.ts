@@ -29,9 +29,8 @@ type RequestCallback = (err: Error | null, resp: LxResponse) => void;
 
 // ==================== CORS 代理请求 ====================
 const CORS_PROXIES = [
-  (url: string) => `https://corsproxy.io/?url=${encodeURIComponent(url)}`,
-  (url: string) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
   (url: string) => url,
+  (url: string) => `https://corsproxy.io/?url=${encodeURIComponent(url)}`,
 ];
 
 async function fetchWithProxy(
@@ -39,6 +38,7 @@ async function fetchWithProxy(
   options: LxRequestOptions = {}
 ): Promise<Response> {
   let lastError: Error | null = null;
+  const timeout = options.timeout || 8000;
 
   for (const proxyFn of CORS_PROXIES) {
     try {
@@ -46,6 +46,7 @@ async function fetchWithProxy(
       const fetchOpts: RequestInit = {
         method: options.method || 'GET',
         headers: options.headers || {},
+        signal: AbortSignal.timeout(timeout),
       };
 
       if (options.body !== undefined) {
@@ -287,9 +288,9 @@ export class LxScriptRuntime {
     this.triggerInternal = triggerInternal;
     this.cleanupFn = cleanup;
 
-    // 设置超时（10秒内必须初始化完成）
+    // 设置超时（8秒内必须初始化完成）
     const timeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(() => reject(new Error('Script init timeout')), 10000);
+      setTimeout(() => reject(new Error('Script init timeout')), 8000);
     });
 
     // 执行脚本

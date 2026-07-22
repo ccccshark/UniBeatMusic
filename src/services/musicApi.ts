@@ -17,13 +17,15 @@ async function proxiedFetch(
   const proxies = [
     (u: string) => u,
     (u: string) => `https://corsproxy.io/?url=${encodeURIComponent(u)}`,
-    (u: string) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
   ];
 
   let lastErr: Error | null = null;
   for (const proxy of proxies) {
     try {
-      const resp = await fetch(proxy(url), options);
+      const resp = await fetch(proxy(url), {
+        ...options,
+        signal: AbortSignal.timeout(8000),
+      });
       if (resp.ok) return resp;
       lastErr = new Error(`HTTP ${resp.status}`);
     } catch (e) {

@@ -40,7 +40,7 @@ export default function MiniPlayer({ loading = false }: MiniPlayerProps) {
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 80, opacity: 0 }}
         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-        className="fixed bottom-16 left-2 right-2 z-30 mx-auto max-w-md"
+        className="fixed bottom-[calc(60px+env(safe-area-inset-bottom))] left-2 right-2 z-40 mx-auto max-w-md"
       >
         <div className="glass-strong rounded-2xl border border-white/10 overflow-hidden shadow-2xl">
           {/* 进度条 */}

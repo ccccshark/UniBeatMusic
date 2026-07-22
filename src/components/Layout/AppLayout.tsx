@@ -15,15 +15,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-salt-bg text-white relative">
-      {/* 顶部细微网格背景 */}
       <div className="fixed inset-0 grid-bg opacity-50 pointer-events-none" />
 
-      <div className="relative z-10">
+      <div className="relative z-10 pt-[env(safe-area-inset-top)] pb-[calc(60px+env(safe-area-inset-bottom))]">
         {children}
       </div>
 
-      {/* 底部 Tab Bar - 椒盐风格 */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 glass-strong border-t border-white/[0.06]">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 glass-strong border-t border-white/[0.06]">
         <div className="max-w-2xl mx-auto grid grid-cols-3 px-4 py-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))]">
           {TABS.map((tab) => {
             const Icon = tab.icon;
@@ -55,7 +53,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   );
 }
 
-// 顶部栏 - 椒盐风格简洁栏
 export function TopBar({
   title,
   subtitle,
