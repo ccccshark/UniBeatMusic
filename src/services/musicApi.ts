@@ -6,10 +6,24 @@ import {
 } from './lxScriptRuntime';
 import type { Track, Album, Artist, SearchResult, LxMusicInfo, LxPlatform, MusicQuality } from '@/types';
 
-// ==================== 公共 API 基础配置 ====================
-const NETEASE_PUBLIC_API = 'https://netease-cloud-music-api-three-drab.vercel.app';
+const NETEASE_PUBLIC_API = 'https://api.injahow.cn';
 
-// ==================== CORS 代理 ====================
+const ALTERNATE_APIS = [
+  'https://api.injahow.cn',
+  'https://music.api.pub',
+];
+
+let currentApiIndex = 0;
+
+function getCurrentApi(): string {
+  return ALTERNATE_APIS[currentApiIndex];
+}
+
+function switchApi(): void {
+  currentApiIndex = (currentApiIndex + 1) % ALTERNATE_APIS.length;
+  console.log('[musicApi] 切换API源:', getCurrentApi());
+}
+
 async function proxiedFetch(
   url: string,
   options: RequestInit = {}
@@ -20,19 +34,32 @@ async function proxiedFetch(
   ];
 
   let lastErr: Error | null = null;
-  for (const proxy of proxies) {
-    try {
-      const resp = await fetch(proxy(url), {
-        ...options,
-        signal: AbortSignal.timeout(8000),
-      });
-      if (resp.ok) return resp;
-      lastErr = new Error(`HTTP ${resp.status}`);
-    } catch (e) {
-      lastErr = e as Error;
+  
+  for (let attempt = 0; attempt < ALTERNATE_APIS.length; attempt++) {
+    const apiBase = getCurrentApi();
+    const fullUrl = url.replace(NETEASE_PUBLIC_API, apiBase);
+    
+    for (const proxy of proxies) {
+      try {
+        const resp = await fetch(proxy(fullUrl), {
+          ...options,
+          signal: AbortSignal.timeout(10000),
+          headers: {
+            ...options.headers,
+            'Content-Type': 'application/json',
+          },
+        });
+        if (resp.ok) return resp;
+        lastErr = new Error(`HTTP ${resp.status}`);
+      } catch (e) {
+        lastErr = e as Error;
+      }
     }
+    
+    switchApi();
   }
-  throw lastErr || new Error('All proxies failed');
+  
+  throw lastErr || new Error('All APIs failed');
 }
 
 async function proxiedFetchJson<T = any>(
@@ -43,14 +70,12 @@ async function proxiedFetchJson<T = any>(
   return resp.json() as Promise<T>;
 }
 
-// ==================== 检查是否有可用音源 ====================
 export function hasActiveSource(): boolean {
   const state = useMusicSourceStore.getState();
   const source = state.getActiveSource();
   return source !== null && source.enabled;
 }
 
-// ==================== 获取脚本运行时（懒加载） ====================
 async function getOrCreateRuntime(): Promise<LxScriptRuntime | null> {
   const state = useMusicSourceStore.getState();
   const source = state.getActiveSource();
@@ -58,17 +83,14 @@ async function getOrCreateRuntime(): Promise<LxScriptRuntime | null> {
   if (!source || !source.enabled) return null;
   if (source.mode !== 'script') return null;
 
-  // 尝试从缓存获取
   let runtime = getScriptRuntime(source.id);
   if (runtime && runtime.isReady) return runtime;
 
-  // 创建新的 runtime
   runtime = new LxScriptRuntime();
   try {
     await runtime.load(source.url);
     setScriptRuntime(source.id, runtime);
 
-    // 更新 meta 信息
     const meta = runtime.getMeta();
     if (meta) {
       state.updateSource(source.id, { scriptMeta: meta });
@@ -81,7 +103,6 @@ async function getOrCreateRuntime(): Promise<LxScriptRuntime | null> {
   }
 }
 
-// ==================== Track -> LxMusicInfo 转换 ====================
 function trackToLxMusicInfo(track: Track): LxMusicInfo {
   return {
     songmid: track.sourceId || track.id,
@@ -96,7 +117,6 @@ function trackToLxMusicInfo(track: Track): LxMusicInfo {
   };
 }
 
-// ==================== 通过脚本获取播放 URL ====================
 async function scriptGetMusicUrl(
   track: Track,
   quality: MusicQuality = '320k'
@@ -110,7 +130,6 @@ async function scriptGetMusicUrl(
     return null;
   }
 
-  // 优先使用第一个支持的平台
   const platform = source.scriptMeta.sources[0];
   const musicInfo = trackToLxMusicInfo(track);
 
@@ -124,56 +143,44 @@ async function scriptGetMusicUrl(
   }
 }
 
-// ==================== 网易云公共 API ====================
-
-// 搜索
 async function neteaseSearch(keyword: string, limit = 30): Promise<SearchResult> {
   try {
     const data = await proxiedFetchJson<any>(
       `${NETEASE_PUBLIC_API}/search?keywords=${encodeURIComponent(keyword)}&limit=${limit}`
     );
 
-    if (data.code !== 200 || !data.result) {
+    if (!data || !data.result) {
       return { tracks: [], albums: [], artists: [] };
     }
 
     const result = data.result;
 
     return {
-      tracks: (result.songs || []).map((s: any) => ({
+      tracks: (result.songs || result.data || []).map((s: any) => ({
         id: String(s.id),
         sourceId: String(s.id),
         platform: 'wy' as const,
         name: s.name,
-        artists: (s.ar || []).map((a: any) => ({
+        artists: (s.ar || s.artists || []).map((a: any) => ({
           id: String(a.id),
           name: a.name,
           avatar: null,
         })),
-        album: s.al
+        album: s.al || s.album
           ? {
-              id: String(s.al.id),
-              name: s.al.name,
-              cover: s.al.picUrl || null,
+              id: String(s.al?.id || s.album?.id),
+              name: s.al?.name || s.album?.name,
+              cover: s.al?.picUrl || s.album?.cover || null,
             }
           : null,
-        cover: s.al?.picUrl || null,
-        duration: s.dt ? Math.floor(s.dt / 1000) : 0,
+        cover: s.al?.picUrl || s.album?.cover || null,
+        duration: s.dt ? Math.floor(s.dt / 1000) : s.duration || 0,
         url: null,
         audioUrl: null,
         lyrics: null,
       })),
-      albums: (result.albums || []).map((a: any) => ({
-        id: String(a.id),
-        name: a.name,
-        cover: a.picUrl || null,
-        artist: a.artist?.name || '',
-      })),
-      artists: (result.artists || []).map((a: any) => ({
-        id: String(a.id),
-        name: a.name,
-        avatar: a.img1v1Url || a.picUrl || null,
-      })),
+      albums: [],
+      artists: [],
     };
   } catch (e) {
     console.error('[musicApi] 网易云搜索失败:', e);
@@ -181,14 +188,13 @@ async function neteaseSearch(keyword: string, limit = 30): Promise<SearchResult>
   }
 }
 
-// 获取歌词
 async function neteaseLyric(songId: string): Promise<string | null> {
   try {
     const data = await proxiedFetchJson<any>(
       `${NETEASE_PUBLIC_API}/lyric?id=${songId}`
     );
-    if (data.code === 200 && data.lrc?.lyric) {
-      return data.lrc.lyric;
+    if (data && (data.lrc?.lyric || data.result?.lrc)) {
+      return data.lrc?.lyric || data.result?.lrc;
     }
     return null;
   } catch {
@@ -196,13 +202,12 @@ async function neteaseLyric(songId: string): Promise<string | null> {
   }
 }
 
-// 获取歌曲详情（含URL）
 async function neteaseSongUrl(songId: string, quality = '320'): Promise<string | null> {
   try {
     const data = await proxiedFetchJson<any>(
       `${NETEASE_PUBLIC_API}/song/url/v1?id=${songId}&level=${quality}`
     );
-    if (data.code === 200 && data.data?.[0]?.url) {
+    if (data && data.data?.[0]?.url) {
       return data.data[0].url;
     }
     return null;
@@ -211,13 +216,12 @@ async function neteaseSongUrl(songId: string, quality = '320'): Promise<string |
   }
 }
 
-// 推荐歌单
 async function neteaseRecommendPlaylists(limit = 10) {
   try {
     const data = await proxiedFetchJson<any>(
       `${NETEASE_PUBLIC_API}/personalized?limit=${limit}`
     );
-    if (data.code === 200 && data.result) {
+    if (data && data.result) {
       return data.result.map((p: any) => ({
         id: String(p.id),
         name: p.name,
@@ -232,13 +236,12 @@ async function neteaseRecommendPlaylists(limit = 10) {
   }
 }
 
-// 新歌速递
 async function neteaseNewSongs() {
   try {
     const data = await proxiedFetchJson<any>(
       `${NETEASE_PUBLIC_API}/personalized/newsong?limit=12`
     );
-    if (data.code === 200 && data.result) {
+    if (data && data.result) {
       return data.result.map((item: any) => {
         const s = item.song;
         return {
@@ -272,13 +275,12 @@ async function neteaseNewSongs() {
   }
 }
 
-// 歌单详情
 async function neteasePlaylistDetail(playlistId: string) {
   try {
     const data = await proxiedFetchJson<any>(
       `${NETEASE_PUBLIC_API}/playlist/detail?id=${playlistId}`
     );
-    if (data.code === 200 && data.playlist) {
+    if (data && data.playlist) {
       const pl = data.playlist;
       const trackIds = pl.trackIds?.slice(0, 50).map((t: any) => t.id).join(',') || '';
 
@@ -287,7 +289,7 @@ async function neteasePlaylistDetail(playlistId: string) {
         const songsData = await proxiedFetchJson<any>(
           `${NETEASE_PUBLIC_API}/song/detail?ids=${trackIds}`
         );
-        if (songsData.code === 200 && songsData.songs) {
+        if (songsData && songsData.songs) {
           tracks = songsData.songs.map((s: any) => ({
             id: String(s.id),
             sourceId: String(s.id),
@@ -330,18 +332,11 @@ async function neteasePlaylistDetail(playlistId: string) {
   }
 }
 
-// ==================== 统一 API 接口 ====================
-
 export const searchApi = {
   async search(keyword: string, limit = 30): Promise<SearchResult> {
-    // 搜索使用公共 API（LX 脚本不提供搜索）
     return neteaseSearch(keyword, limit);
   },
 
-  /**
-   * 获取歌曲播放 URL
-   * 优先通过 LX 脚本获取，失败则使用公共 API 兜底
-   */
   async getSongUrl(
     trackOrId: Track | string,
     quality: MusicQuality = '320k'
@@ -365,13 +360,11 @@ export const searchApi = {
       track = trackOrId;
     }
 
-    // 1. 优先尝试 LX 脚本
     if (hasActiveSource()) {
       const scriptUrl = await scriptGetMusicUrl(track, quality);
       if (scriptUrl) return scriptUrl;
     }
 
-    // 2. 兜底：网易云公共 API
     const songId = track.sourceId || track.id;
     if (songId && /^\d+$/.test(songId)) {
       const qualityMap: Record<MusicQuality, string> = {
@@ -391,7 +384,6 @@ export const searchApi = {
   async getLyrics(track: Track): Promise<string | null> {
     const songId = track.sourceId || track.id;
 
-    // 1. 优先尝试 LX 脚本
     if (hasActiveSource()) {
       const runtime = await getOrCreateRuntime();
       if (runtime) {
@@ -409,7 +401,6 @@ export const searchApi = {
       }
     }
 
-    // 2. 兜底：网易云公共 API
     if (songId && /^\d+$/.test(songId)) {
       return neteaseLyric(songId);
     }
@@ -432,19 +423,35 @@ export const recommendApi = {
   },
 
   async getRecommendTracks(limit = 20): Promise<Track[]> {
+    const tasks = [
+      neteaseNewSongs(),
+      neteaseRecommendPlaylists(1).then(async (playlists) => {
+        if (playlists.length > 0) {
+          const detail = await neteasePlaylistDetail(playlists[0].id);
+          return detail?.tracks || [];
+        }
+        return [];
+      }),
+    ];
+
     try {
-      const playlists = await neteaseRecommendPlaylists(1);
-      if (playlists.length > 0) {
-        const detail = await neteasePlaylistDetail(playlists[0].id);
-        if (detail?.tracks) {
-          return detail.tracks.slice(0, limit);
+      const results = await Promise.allSettled(tasks);
+      const allTracks: Track[] = [];
+      
+      for (const result of results) {
+        if (result.status === 'fulfilled') {
+          allTracks.push(...result.value);
         }
       }
+
+      const uniqueTracks = allTracks.filter(
+        (track, index, self) => index === self.findIndex(t => t.id === track.id)
+      );
+
+      return uniqueTracks.slice(0, limit);
     } catch (e) {
       console.warn('[musicApi] 获取推荐失败:', e);
+      return neteaseNewSongs().then((songs) => songs.slice(0, limit));
     }
-
-    // 兜底：新歌
-    return neteaseNewSongs().then((songs) => songs.slice(0, limit));
   },
 };
